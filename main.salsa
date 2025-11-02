@@ -1,0 +1,20 @@
+module pa2;
+
+behavior Main {
+
+  void act(String[] args) {
+    String path;
+    if (args.length > 0) path = args[0];
+    else path = "./data/2nmi.txt";
+
+    io.ReaderActor reader = new io.ReaderActor();
+    // pass 'this' so the reader can reply to afterRead(...)
+    reader <- readAll(path, this);
+  }
+
+  // Use raw ArrayList (no generics in 1.1.x headers)
+  void afterRead(java.util.ArrayList flights) {
+    System.out.println("Unique flights: " + flights.size());
+    // next: hand off to your pairing/worker stage
+  }
+}
