@@ -31,6 +31,7 @@ import salsa.resources.ActorService;
 
 // End SALSA compiler generated import delcarations.
 
+import salsa.language.ActorReference;
 
 public class Coordinator extends UniversalActor  {
 	public static void main(String args[]) {
@@ -256,22 +257,22 @@ public class Coordinator extends UniversalActor  {
 			}
 		}
 
-		pa2.Main replyTo;
+		ActorReference replyRef;
 		double globalBest;
 		java.util.ArrayList bestPairs;
 		int expected, received;
-		public void computeClosest(java.util.ArrayList flights, pa2.Main replyTo) {
-			this.replyTo = replyTo;
+		public void computeClosest(java.util.ArrayList flights, salsa.naming.UAL replyUAL) {
+			this.replyRef = pa2.Main.getReferenceByLocation(replyUAL);
 			this.globalBest = java.lang.Double.POSITIVE_INFINITY;
 			this.bestPairs = new java.util.ArrayList();
 			this.received = 0;
 			int n = flights.size();
 			if (n<2) {{
 				{
-					// replyTo<-afterClosest(java.lang.Double.NaN, bestPairs)
+					// replyRef<-afterClosest(java.lang.Double.NaN, bestPairs)
 					{
 						Object _arguments[] = { java.lang.Double.NaN, bestPairs };
-						Message message = new Message( self, replyTo, "afterClosest", _arguments, null, null );
+						Message message = new Message( self, replyRef, "afterClosest", _arguments, null, null );
 						__messages.add( message );
 					}
 				}
@@ -314,10 +315,10 @@ public class Coordinator extends UniversalActor  {
 }				}
 			}
 }}			if (received==expected) {			{
-				// replyTo<-afterClosest(globalBest, bestPairs)
+				// replyRef<-afterClosest(globalBest, bestPairs)
 				{
 					Object _arguments[] = { globalBest, bestPairs };
-					Message message = new Message( self, replyTo, "afterClosest", _arguments, null, null );
+					Message message = new Message( self, replyRef, "afterClosest", _arguments, null, null );
 					__messages.add( message );
 				}
 			}

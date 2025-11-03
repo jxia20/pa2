@@ -32,7 +32,7 @@ import salsa.resources.ActorService;
 // End SALSA compiler generated import delcarations.
 
 import pa2.Flight;
-import salsa.language.UniversalActor;
+import salsa.language.ActorReference;
 
 public class ReaderActor extends UniversalActor  {
 	public static void main(String args[]) {
@@ -258,7 +258,7 @@ public class ReaderActor extends UniversalActor  {
 			}
 		}
 
-		public void readAll(String path, UniversalActor.State replyTo) {
+		public void readAll(String path, salsa.naming.UAL replyUAL) {
 			java.util.LinkedHashMap map = new java.util.LinkedHashMap();
 			try {
 				java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader(path));
@@ -300,7 +300,7 @@ break;						}
 			java.util.ArrayList list = new java.util.ArrayList();
 			java.util.Iterator it = map.values().iterator();
 			while (it.hasNext()) list.add(it.next());
-			pa2.Main mainRef = pa2.Main.getReferenceByLocation(replyTo.getUAL());
+			ActorReference mainRef = pa2.Main.getReferenceByLocation(replyUAL);
 			{
 				// mainRef<-afterRead(list)
 				{

@@ -270,9 +270,9 @@ public class Main extends UniversalActor  {
 }			else {path = "./pa2/data/2nmi.txt";
 }			ReaderActor reader = ((ReaderActor)new ReaderActor(this).construct());
 			{
-				// reader<-readAll(path, this)
+				// reader<-readAll(path, this.getUAL())
 				{
-					Object _arguments[] = { path, this };
+					Object _arguments[] = { path, this.getUAL() };
 					Message message = new Message( self, reader, "readAll", _arguments, null, null );
 					__messages.add( message );
 				}
@@ -282,9 +282,9 @@ public class Main extends UniversalActor  {
 			System.out.println("Unique flights: "+flights.size());
 			Coordinator coord = ((Coordinator)new Coordinator(this).construct());
 			{
-				// coord<-computeClosest(flights, this)
+				// coord<-computeClosest(flights, this.getUAL())
 				{
-					Object _arguments[] = { flights, this };
+					Object _arguments[] = { flights, this.getUAL() };
 					Message message = new Message( self, coord, "computeClosest", _arguments, null, null );
 					__messages.add( message );
 				}

@@ -1,11 +1,11 @@
 module pa2;
 
 import pa2.Flight;
-import salsa.language.UniversalActor;
+import salsa.language.ActorReference;   // add this
 
 behavior ReaderActor {
 
-  void readAll(String path, UniversalActor.State replyTo) {
+  void readAll(String path, salsa.naming.UAL replyUAL) {
     java.util.LinkedHashMap map = new java.util.LinkedHashMap();
 
     try {
@@ -23,10 +23,7 @@ behavior ReaderActor {
         if (fields.length < 7) continue;
 
         boolean bad = false;
-        for (int i = 0; i < 7; i++) {
-          fields[i] = fields[i].trim();
-          if (fields[i].length() == 0) { bad = true; break; }
-        }
+        for (int i=0; i<7; i++){ fields[i]=fields[i].trim(); if (fields[i].length()==0){bad=true;break;} }
         if (bad) continue;
 
         String id = fields[0];
@@ -39,7 +36,6 @@ behavior ReaderActor {
           double vs   = Double.parseDouble(fields[6]);
           if (lat < -90 || lat > 90) continue;
           if (lon < -180 || lon > 180) continue;
-
           map.put(id, new Flight(id, lat, lon, trak, hs, alt, vs));
         } catch (Exception ignore) {}
       }
@@ -54,8 +50,8 @@ behavior ReaderActor {
     java.util.Iterator it = map.values().iterator();
     while (it.hasNext()) list.add(it.next());
 
-    // Convert the State to a proper Main actor reference, then reply
-    pa2.Main mainRef = pa2.Main.getReferenceByLocation(replyTo.getUAL());
+    // Get a reference by UAL and reply
+    ActorReference mainRef = pa2.Main.getReferenceByLocation(replyUAL);
     mainRef <- afterRead(list);
   }
 

@@ -1,19 +1,21 @@
 module pa2;
 
+import salsa.language.ActorReference;
+
 behavior Coordinator {
-  pa2.Main replyTo;
+  ActorReference replyRef;
   double globalBest;
-  java.util.ArrayList bestPairs; // of String
+  java.util.ArrayList bestPairs;
   int expected, received;
 
-  void computeClosest(java.util.ArrayList flights, pa2.Main replyTo) {
-    this.replyTo = replyTo;
+  void computeClosest(java.util.ArrayList flights, salsa.naming.UAL replyUAL) {
+    this.replyRef = pa2.Main.getReferenceByLocation(replyUAL);
     this.globalBest = java.lang.Double.POSITIVE_INFINITY;
     this.bestPairs = new java.util.ArrayList();
     this.received = 0;
 
     int n = flights.size();
-    if (n < 2) { replyTo <- afterClosest(java.lang.Double.NaN, bestPairs); return; }
+    if (n < 2) { replyRef <- afterClosest(java.lang.Double.NaN, bestPairs); return; }
 
     int workers = 4;
     if (n < 100) workers = java.lang.Math.min(2, n);
@@ -42,6 +44,6 @@ behavior Coordinator {
         if (!seen.contains(s)) { bestPairs.add(s); seen.add(s); }
       }
     }
-    if (received == expected) replyTo <- afterClosest(globalBest, bestPairs);
+    if (received == expected) replyRef <- afterClosest(globalBest, bestPairs);
   }
 }
