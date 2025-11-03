@@ -264,6 +264,7 @@ public class Main extends UniversalActor  {
 			}
 		}
 
+		java.util.ArrayList flightsCache;
 		public void act(String[] args) {
 			String path;
 			if (args.length>0) {path = args[0];
@@ -279,6 +280,7 @@ public class Main extends UniversalActor  {
 			}
 		}
 		public void afterRead(java.util.ArrayList flights) {
+			this.flightsCache = flights;
 			System.out.println("Unique flights: "+flights.size());
 			Coordinator coord = ((Coordinator)new Coordinator(this).construct());
 			{
@@ -297,6 +299,20 @@ public class Main extends UniversalActor  {
 			}
 }			System.out.println(String.format(java.util.Locale.US, "%.6f", dmin));
 			java.util.Iterator it = pairs.iterator();
+			while (it.hasNext()) System.out.println((String)it.next());
+			Coordinator coord = ((Coordinator)new Coordinator(this).construct());
+			{
+				// coord<-computeDcpa(this.flightsCache, this.getUAL())
+				{
+					Object _arguments[] = { this.flightsCache, this.getUAL() };
+					Message message = new Message( self, coord, "computeDcpa", _arguments, null, null );
+					__messages.add( message );
+				}
+			}
+		}
+		public void afterDcpa(double d2, java.util.ArrayList rows) {
+			System.out.println(String.format(java.util.Locale.US, "%.6f", d2));
+			java.util.Iterator it = rows.iterator();
 			while (it.hasNext()) System.out.println((String)it.next());
 		}
 	}

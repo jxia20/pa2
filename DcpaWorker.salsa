@@ -1,0 +1,82 @@
+module pa2;
+
+import pa2.Flight;
+import pa2.Kinematics;
+
+behavior DcpaWorker {
+
+  void findMinDcpa(java.util.ArrayList flights,
+                   java.lang.Integer iStartObj,
+                   java.lang.Integer iEndObj,
+                   salsa.naming.UAL parentUAL) {
+
+    int iStart = iStartObj.intValue();
+    int iEnd   = iEndObj.intValue();
+
+    double best = java.lang.Double.POSITIVE_INFINITY;
+    java.util.ArrayList rows = new java.util.ArrayList();  // strings "id1 lat1 lon1 alt1 id2 lat2 lon2 alt2"
+
+    int n = flights.size();
+    for (int i = iStart; i <= iEnd && i < n-1; i++) {
+      Flight a = (Flight) flights.get(i);
+      for (int j = i+1; j < n; j++) {
+        Flight b = (Flight) flights.get(j);
+
+        // Relative position in local ENU (nmi)
+        double[] dEN = Kinematics.deltaEN_Nmi(a.latDeg, a.lonDeg, b.latDeg, b.lonDeg);
+        double dE0 = dEN[0], dN0 = dEN[1];
+        double dZ0 = Kinematics.feetToNmi(b.altFt - a.altFt);
+
+        // Relative velocity (nmi/s)
+        double[] vA = Kinematics.velocityEN_NmiPerSec(a.trackDeg, a.hsKnots);
+        double[] vB = Kinematics.velocityEN_NmiPerSec(b.trackDeg, b.hsKnots);
+        double vE = vB[0] - vA[0];
+        double vN = vB[1] - vA[1];
+        double vZ = Kinematics.feetToNmi((b.vsFpm - a.vsFpm) / 60.0); // ft/s -> nmi/s
+
+        double rv = dE0*vE + dN0*vN + dZ0*vZ;
+        double vv = vE*vE + vN*vN + vZ*vZ;
+
+        double t = 0.0;
+        if (vv > 0) {
+          t = - rv / vv;
+          if (t < 0) t = 0;
+        }
+
+        // Distance at CPA (3D)
+        double dE = dE0 + vE*t;
+        double dN = dN0 + vN*t;
+        double dZ = dZ0 + vZ*t;
+        double dcpa = java.lang.Math.sqrt(dE*dE + dN*dN + dZ*dZ);
+
+        if (dcpa < best - 1e-9) {
+          best = dcpa;
+          rows.clear();
+          rows.add(formatRowAtTime(a, b, t));
+        } else if (java.lang.Math.abs(dcpa - best) <= 1e-9) {
+          rows.add(formatRowAtTime(a, b, t));
+        }
+      }
+    }
+
+    salsa.language.ActorReference parent = pa2.Coordinator.getReferenceByLocation(parentUAL);
+    parent <- reportDcpa(best, rows);
+  }
+
+  String formatRowAtTime(Flight a, Flight b, double tsec) {
+    double distA = a.hsKnots/3600.0 * tsec;  // nmi
+    double distB = b.hsKnots/3600.0 * tsec;
+
+    double[] A = Kinematics.moveAlong(a.latDeg, a.lonDeg, a.trackDeg, distA);
+    double[] B = Kinematics.moveAlong(b.latDeg, b.lonDeg, b.trackDeg, distB);
+
+    double altA = a.altFt + a.vsFpm*(tsec/60.0);
+    double altB = b.altFt + b.vsFpm*(tsec/60.0);
+
+    // Format with US locale and 6 decimals for lat/lon; altitude rounded to nearest ft
+    return a.id + " "
+         + String.format(java.util.Locale.US, "%.6f %.6f %.0f ", A[0], A[1], altA)
+         + b.id + " "
+         + String.format(java.util.Locale.US, "%.6f %.6f %.0f", B[0], B[1], altB);
+  }
+}

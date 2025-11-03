@@ -31,9 +31,10 @@ import salsa.resources.ActorService;
 
 // End SALSA compiler generated import delcarations.
 
-import salsa.language.ActorReference;
+import pa2.Flight;
+import pa2.Kinematics;
 
-public class Coordinator extends UniversalActor  {
+public class DcpaWorker extends UniversalActor  {
 	public static void main(String args[]) {
 		UAN uan = null;
 		UAL ual = null;
@@ -68,7 +69,7 @@ public class Coordinator extends UniversalActor  {
 			ual = new UAL( ServiceFactory.getTheater().getLocation() + System.getProperty("identifier"));
 		}
 		RunTime.receivedMessage();
-		Coordinator instance = (Coordinator)new Coordinator(uan, ual,null).construct();
+		DcpaWorker instance = (DcpaWorker)new DcpaWorker(uan, ual,null).construct();
 		gc.WeakReference instanceRef=new gc.WeakReference(uan,ual);
 		{
 			Object[] _arguments = { args };
@@ -81,18 +82,18 @@ public class Coordinator extends UniversalActor  {
 		RunTime.finishedProcessingMessage();
 	}
 
-	public static ActorReference getReferenceByName(UAN uan)	{ return new Coordinator(false, uan); }
-	public static ActorReference getReferenceByName(String uan)	{ return Coordinator.getReferenceByName(new UAN(uan)); }
-	public static ActorReference getReferenceByLocation(UAL ual)	{ return new Coordinator(false, ual); }
+	public static ActorReference getReferenceByName(UAN uan)	{ return new DcpaWorker(false, uan); }
+	public static ActorReference getReferenceByName(String uan)	{ return DcpaWorker.getReferenceByName(new UAN(uan)); }
+	public static ActorReference getReferenceByLocation(UAL ual)	{ return new DcpaWorker(false, ual); }
 
-	public static ActorReference getReferenceByLocation(String ual)	{ return Coordinator.getReferenceByLocation(new UAL(ual)); }
-	public Coordinator(boolean o, UAN __uan)	{ super(false,__uan); }
-	public Coordinator(boolean o, UAL __ual)	{ super(false,__ual); }
-	public Coordinator(UAN __uan,UniversalActor.State sourceActor)	{ this(__uan, null, sourceActor); }
-	public Coordinator(UAL __ual,UniversalActor.State sourceActor)	{ this(null, __ual, sourceActor); }
-	public Coordinator(UniversalActor.State sourceActor)		{ this(null, null, sourceActor);  }
-	public Coordinator()		{  }
-	public Coordinator(UAN __uan, UAL __ual, Object obj) {
+	public static ActorReference getReferenceByLocation(String ual)	{ return DcpaWorker.getReferenceByLocation(new UAL(ual)); }
+	public DcpaWorker(boolean o, UAN __uan)	{ super(false,__uan); }
+	public DcpaWorker(boolean o, UAL __ual)	{ super(false,__ual); }
+	public DcpaWorker(UAN __uan,UniversalActor.State sourceActor)	{ this(__uan, null, sourceActor); }
+	public DcpaWorker(UAL __ual,UniversalActor.State sourceActor)	{ this(null, __ual, sourceActor); }
+	public DcpaWorker(UniversalActor.State sourceActor)		{ this(null, null, sourceActor);  }
+	public DcpaWorker()		{  }
+	public DcpaWorker(UAN __uan, UAL __ual, Object obj) {
 		//decide the type of sourceActor
 		//if obj is null, the actor must be the startup actor.
 		//if obj is an actorReference, this actor is created by a remote actor
@@ -115,7 +116,7 @@ public class Coordinator extends UniversalActor  {
 			      setSource(sourceActor.getUAN(), sourceActor.getUAL());
 			      activateGC();
 			    }
-			    createRemotely(__uan, __ual, "pa2.Coordinator", sourceRef);
+			    createRemotely(__uan, __ual, "pa2.DcpaWorker", sourceRef);
 			  }
 
 			  // local creation
@@ -180,11 +181,11 @@ public class Coordinator extends UniversalActor  {
 	}
 
 	public class State extends UniversalActor .State {
-		public Coordinator self;
+		public DcpaWorker self;
 		public void updateSelf(ActorReference actorReference) {
-			((Coordinator)actorReference).setUAL(getUAL());
-			((Coordinator)actorReference).setUAN(getUAN());
-			self = new Coordinator(false,getUAL());
+			((DcpaWorker)actorReference).setUAL(getUAL());
+			((DcpaWorker)actorReference).setUAN(getUAN());
+			self = new DcpaWorker(false,getUAL());
 			self.setUAN(getUAN());
 			self.setUAL(getUAL());
 			self.activateGC();
@@ -196,7 +197,7 @@ public class Coordinator extends UniversalActor  {
 
 		public State(UAN __uan, UAL __ual) {
 			super(__uan, __ual);
-			addClassName( "pa2.Coordinator$State" );
+			addClassName( "pa2.DcpaWorker$State" );
 			addMethodsForClasses();
 		}
 
@@ -257,129 +258,63 @@ public class Coordinator extends UniversalActor  {
 			}
 		}
 
-		ActorReference replyRef;
-		double globalBest;
-		java.util.ArrayList bestPairs;
-		int expected, received;
-		double bestDcpa;
-		java.util.ArrayList bestDcpaRows;
-		int expectedD, receivedD;
-		public void computeClosest(java.util.ArrayList flights, salsa.naming.UAL replyUAL) {
-			this.replyRef = pa2.Main.getReferenceByLocation(replyUAL);
-			this.globalBest = java.lang.Double.POSITIVE_INFINITY;
-			this.bestPairs = new java.util.ArrayList();
-			this.received = 0;
+		public void findMinDcpa(java.util.ArrayList flights, java.lang.Integer iStartObj, java.lang.Integer iEndObj, salsa.naming.UAL parentUAL) {
+			int iStart = iStartObj.intValue();
+			int iEnd = iEndObj.intValue();
+			double best = java.lang.Double.POSITIVE_INFINITY;
+			java.util.ArrayList rows = new java.util.ArrayList();
 			int n = flights.size();
-			if (n<2) {{
-				{
-					// replyRef<-afterClosest(java.lang.Double.NaN, bestPairs)
-					{
-						Object _arguments[] = { java.lang.Double.NaN, bestPairs };
-						Message message = new Message( self, replyRef, "afterClosest", _arguments, null, null );
-						__messages.add( message );
+			for (int i = iStart; i<=iEnd&&i<n-1; i++){
+				Flight a = (Flight)flights.get(i);
+				for (int j = i+1; j<n; j++){
+					Flight b = (Flight)flights.get(j);
+					double[] dEN = Kinematics.deltaEN_Nmi(a.latDeg, a.lonDeg, b.latDeg, b.lonDeg);
+					double dE0 = dEN[0], dN0 = dEN[1];
+					double dZ0 = Kinematics.feetToNmi(b.altFt-a.altFt);
+					double[] vA = Kinematics.velocityEN_NmiPerSec(a.trackDeg, a.hsKnots);
+					double[] vB = Kinematics.velocityEN_NmiPerSec(b.trackDeg, b.hsKnots);
+					double vE = vB[0]-vA[0];
+					double vN = vB[1]-vA[1];
+					double vZ = Kinematics.feetToNmi((b.vsFpm-a.vsFpm)/60.0);
+					double rv = dE0*vE+dN0*vN+dZ0*vZ;
+					double vv = vE*vE+vN*vN+vZ*vZ;
+					double t = 0.0;
+					if (vv>0) {{
+						t = -rv/vv;
+						if (t<0) {t = 0;
+}					}
+}					double dE = dE0+vE*t;
+					double dN = dN0+vN*t;
+					double dZ = dZ0+vZ*t;
+					double dcpa = java.lang.Math.sqrt(dE*dE+dN*dN+dZ*dZ);
+					if (dcpa<best-1e-9) {{
+						best = dcpa;
+						rows.clear();
+						rows.add(formatRowAtTime(a, b, t));
 					}
-				}
-				return;
-			}
-}			int workers = 4;
-			if (n<100) {workers = java.lang.Math.min(2, n);
-}			int chunk = (n+workers-1)/workers;
-			expected = 0;
-			for (int w = 0; w<workers; w++){
-				int iStart = w*chunk;
-				int iEnd = java.lang.Math.min(n-2, (w+1)*chunk-1);
-				if (iStart>=n-1) {break;}				PairWorker pw = ((PairWorker)new PairWorker(this).construct());
-				expected++;
-				{
-					// pw<-findMinPairs(flights, iStart, iEnd, this.getUAL())
-					{
-						Object _arguments[] = { flights, iStart, iEnd, this.getUAL() };
-						Message message = new Message( self, pw, "findMinPairs", _arguments, null, null );
-						__messages.add( message );
+}					else {if (java.lang.Math.abs(dcpa-best)<=1e-9) {{
+						rows.add(formatRowAtTime(a, b, t));
 					}
-				}
+}}				}
 			}
-		}
-		public void report(double best, java.util.ArrayList pairs) {
-			received++;
-			if (best<globalBest-1e-9) {{
-				globalBest = best;
-				bestPairs = pairs;
-			}
-}			else {if (java.lang.Math.abs(best-globalBest)<=1e-9) {{
-				java.util.HashSet seen = new java.util.HashSet(bestPairs);
-				java.util.Iterator it = pairs.iterator();
-				while (it.hasNext()) {
-					Object s = it.next();
-					if (!seen.contains(s)) {{
-						bestPairs.add(s);
-						seen.add(s);
-					}
-}				}
-			}
-}}			if (received==expected) {			{
-				// replyRef<-afterClosest(globalBest, bestPairs)
+			salsa.language.ActorReference parent = pa2.Coordinator.getReferenceByLocation(parentUAL);
+			{
+				// parent<-reportDcpa(best, rows)
 				{
-					Object _arguments[] = { globalBest, bestPairs };
-					Message message = new Message( self, replyRef, "afterClosest", _arguments, null, null );
+					Object _arguments[] = { best, rows };
+					Message message = new Message( self, parent, "reportDcpa", _arguments, null, null );
 					__messages.add( message );
 				}
 			}
-}		}
-		public void computeDcpa(java.util.ArrayList flights, salsa.naming.UAL replyUAL) {
-			this.replyRef = pa2.Main.getReferenceByLocation(replyUAL);
-			this.bestDcpa = java.lang.Double.POSITIVE_INFINITY;
-			this.bestDcpaRows = new java.util.ArrayList();
-			this.receivedD = 0;
-			int n = flights.size();
-			if (n<2) {{
-				{
-					// replyRef<-afterDcpa(java.lang.Double.NaN, bestDcpaRows)
-					{
-						Object _arguments[] = { java.lang.Double.NaN, bestDcpaRows };
-						Message message = new Message( self, replyRef, "afterDcpa", _arguments, null, null );
-						__messages.add( message );
-					}
-				}
-				return;
-			}
-}			int workers = 4;
-			if (n<100) {workers = java.lang.Math.min(2, n);
-}			int chunk = (n+workers-1)/workers;
-			expectedD = 0;
-			for (int w = 0; w<workers; w++){
-				int iStart = w*chunk;
-				int iEnd = java.lang.Math.min(n-2, (w+1)*chunk-1);
-				if (iStart>=n-1) {break;}				DcpaWorker wkr = ((DcpaWorker)new DcpaWorker(this).construct());
-				expectedD++;
-				{
-					// wkr<-findMinDcpa(flights, iStart, iEnd, this.getUAL())
-					{
-						Object _arguments[] = { flights, iStart, iEnd, this.getUAL() };
-						Message message = new Message( self, wkr, "findMinDcpa", _arguments, null, null );
-						__messages.add( message );
-					}
-				}
-			}
 		}
-		public void reportDcpa(double best, java.util.ArrayList rows) {
-			receivedD++;
-			if (best<bestDcpa-1e-9) {{
-				bestDcpa = best;
-				bestDcpaRows = rows;
-			}
-}			else {if (java.lang.Math.abs(best-bestDcpa)<=1e-9) {{
-				java.util.Iterator it = rows.iterator();
-				while (it.hasNext()) bestDcpaRows.add(it.next());
-			}
-}}			if (receivedD==expectedD) {			{
-				// replyRef<-afterDcpa(bestDcpa, bestDcpaRows)
-				{
-					Object _arguments[] = { bestDcpa, bestDcpaRows };
-					Message message = new Message( self, replyRef, "afterDcpa", _arguments, null, null );
-					__messages.add( message );
-				}
-			}
-}		}
+		public String formatRowAtTime(Flight a, Flight b, double tsec) {
+			double distA = a.hsKnots/3600.0*tsec;
+			double distB = b.hsKnots/3600.0*tsec;
+			double[] A = Kinematics.moveAlong(a.latDeg, a.lonDeg, a.trackDeg, distA);
+			double[] B = Kinematics.moveAlong(b.latDeg, b.lonDeg, b.trackDeg, distB);
+			double altA = a.altFt+a.vsFpm*(tsec/60.0);
+			double altB = b.altFt+b.vsFpm*(tsec/60.0);
+			return a.id+" "+String.format(java.util.Locale.US, "%.6f %.6f %.0f ", A[0], A[1], altA)+b.id+" "+String.format(java.util.Locale.US, "%.6f %.6f %.0f", B[0], B[1], altB);
+		}
 	}
 }

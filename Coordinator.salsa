@@ -4,9 +4,16 @@ import salsa.language.ActorReference;
 
 behavior Coordinator {
   ActorReference replyRef;
+
+  // d1 stage
   double globalBest;
   java.util.ArrayList bestPairs;
   int expected, received;
+
+  // d2 stage
+  double bestDcpa;
+  java.util.ArrayList bestDcpaRows;
+  int expectedD, receivedD;
 
   void computeClosest(java.util.ArrayList flights, salsa.naming.UAL replyUAL) {
     this.replyRef = pa2.Main.getReferenceByLocation(replyUAL);
@@ -45,5 +52,41 @@ behavior Coordinator {
       }
     }
     if (received == expected) replyRef <- afterClosest(globalBest, bestPairs);
+  }
+
+  // ----- DCPA stage -----
+  void computeDcpa(java.util.ArrayList flights, salsa.naming.UAL replyUAL) {
+    this.replyRef = pa2.Main.getReferenceByLocation(replyUAL);
+    this.bestDcpa = java.lang.Double.POSITIVE_INFINITY;
+    this.bestDcpaRows = new java.util.ArrayList();
+    this.receivedD = 0;
+
+    int n = flights.size();
+    if (n < 2) { replyRef <- afterDcpa(java.lang.Double.NaN, bestDcpaRows); return; }
+
+    int workers = 4;
+    if (n < 100) workers = java.lang.Math.min(2, n);
+    int chunk = (n + workers - 1) / workers;
+    expectedD = 0;
+
+    for (int w=0; w<workers; w++) {
+      int iStart = w * chunk;
+      int iEnd   = java.lang.Math.min(n-2, (w+1)*chunk - 1);
+      if (iStart >= n-1) break;
+      DcpaWorker wkr = new DcpaWorker();
+      expectedD++;
+      wkr <- findMinDcpa(flights, iStart, iEnd, this.getUAL());
+    }
+  }
+
+  void reportDcpa(double best, java.util.ArrayList rows) {
+    receivedD++;
+    if (best < bestDcpa - 1e-9) {
+      bestDcpa = best; bestDcpaRows = rows;
+    } else if (java.lang.Math.abs(best - bestDcpa) <= 1e-9) {
+      java.util.Iterator it = rows.iterator();
+      while (it.hasNext()) bestDcpaRows.add(it.next());
+    }
+    if (receivedD == expectedD) replyRef <- afterDcpa(bestDcpa, bestDcpaRows);
   }
 }

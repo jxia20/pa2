@@ -1,6 +1,8 @@
 module pa2;
 
 behavior Main {
+  java.util.ArrayList flightsCache;
+
   void act(String[] args) {
     String path;
     if (args.length > 0) path = args[0];
@@ -10,9 +12,9 @@ behavior Main {
   }
 
   void afterRead(java.util.ArrayList flights) {
+    this.flightsCache = flights;
     System.out.println("Unique flights: " + flights.size());
     Coordinator coord = new Coordinator();
-    // was: coord <- computeClosest(flights, this);
     coord <- computeClosest(flights, this.getUAL());
   }
 
@@ -21,8 +23,20 @@ behavior Main {
       System.out.println("No pairs.");
       return;
     }
+    // d1 block
     System.out.println(String.format(java.util.Locale.US, "%.6f", dmin));
     java.util.Iterator it = pairs.iterator();
+    while (it.hasNext()) System.out.println((String) it.next());
+
+    // kick off DCPA stage
+    Coordinator coord = new Coordinator();
+    coord <- computeDcpa(this.flightsCache, this.getUAL());
+  }
+
+  void afterDcpa(double d2, java.util.ArrayList rows) {
+    // d2 block
+    System.out.println(String.format(java.util.Locale.US, "%.6f", d2));
+    java.util.Iterator it = rows.iterator();
     while (it.hasNext()) System.out.println((String) it.next());
   }
 }
