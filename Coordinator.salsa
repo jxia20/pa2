@@ -1,0 +1,47 @@
+module pa2;
+
+behavior Coordinator {
+  pa2.Main replyTo;
+  double globalBest;
+  java.util.ArrayList bestPairs; // of String
+  int expected, received;
+
+  void computeClosest(java.util.ArrayList flights, pa2.Main replyTo) {
+    this.replyTo = replyTo;
+    this.globalBest = java.lang.Double.POSITIVE_INFINITY;
+    this.bestPairs = new java.util.ArrayList();
+    this.received = 0;
+
+    int n = flights.size();
+    if (n < 2) { replyTo <- afterClosest(java.lang.Double.NaN, bestPairs); return; }
+
+    int workers = 4;
+    if (n < 100) workers = java.lang.Math.min(2, n);
+    int chunk = (n + workers - 1) / workers;
+    expected = 0;
+
+    for (int w=0; w<workers; w++) {
+      int iStart = w * chunk;
+      int iEnd   = java.lang.Math.min(n-2, (w+1)*chunk - 1);
+      if (iStart >= n-1) break;
+      PairWorker pw = new PairWorker();
+      expected++;
+      pw <- findMinPairs(flights, iStart, iEnd, this);
+    }
+  }
+
+  void report(double best, java.util.ArrayList pairs) {
+    received++;
+    if (best < globalBest - 1e-9) {
+      globalBest = best; bestPairs = pairs;
+    } else if (java.lang.Math.abs(best - globalBest) <= 1e-9) {
+      java.util.HashSet seen = new java.util.HashSet(bestPairs);
+      java.util.Iterator it = pairs.iterator();
+      while (it.hasNext()) {
+        Object s = it.next();
+        if (!seen.contains(s)) { bestPairs.add(s); seen.add(s); }
+      }
+    }
+    if (received == expected) replyTo <- afterClosest(globalBest, bestPairs);
+  }
+}

@@ -32,7 +32,7 @@ import salsa.resources.ActorService;
 // End SALSA compiler generated import delcarations.
 
 
-public class Main extends UniversalActor  {
+public class Coordinator extends UniversalActor  {
 	public static void main(String args[]) {
 		UAN uan = null;
 		UAL ual = null;
@@ -67,7 +67,7 @@ public class Main extends UniversalActor  {
 			ual = new UAL( ServiceFactory.getTheater().getLocation() + System.getProperty("identifier"));
 		}
 		RunTime.receivedMessage();
-		Main instance = (Main)new Main(uan, ual,null).construct();
+		Coordinator instance = (Coordinator)new Coordinator(uan, ual,null).construct();
 		gc.WeakReference instanceRef=new gc.WeakReference(uan,ual);
 		{
 			Object[] _arguments = { args };
@@ -80,18 +80,18 @@ public class Main extends UniversalActor  {
 		RunTime.finishedProcessingMessage();
 	}
 
-	public static ActorReference getReferenceByName(UAN uan)	{ return new Main(false, uan); }
-	public static ActorReference getReferenceByName(String uan)	{ return Main.getReferenceByName(new UAN(uan)); }
-	public static ActorReference getReferenceByLocation(UAL ual)	{ return new Main(false, ual); }
+	public static ActorReference getReferenceByName(UAN uan)	{ return new Coordinator(false, uan); }
+	public static ActorReference getReferenceByName(String uan)	{ return Coordinator.getReferenceByName(new UAN(uan)); }
+	public static ActorReference getReferenceByLocation(UAL ual)	{ return new Coordinator(false, ual); }
 
-	public static ActorReference getReferenceByLocation(String ual)	{ return Main.getReferenceByLocation(new UAL(ual)); }
-	public Main(boolean o, UAN __uan)	{ super(false,__uan); }
-	public Main(boolean o, UAL __ual)	{ super(false,__ual); }
-	public Main(UAN __uan,UniversalActor.State sourceActor)	{ this(__uan, null, sourceActor); }
-	public Main(UAL __ual,UniversalActor.State sourceActor)	{ this(null, __ual, sourceActor); }
-	public Main(UniversalActor.State sourceActor)		{ this(null, null, sourceActor);  }
-	public Main()		{  }
-	public Main(UAN __uan, UAL __ual, Object obj) {
+	public static ActorReference getReferenceByLocation(String ual)	{ return Coordinator.getReferenceByLocation(new UAL(ual)); }
+	public Coordinator(boolean o, UAN __uan)	{ super(false,__uan); }
+	public Coordinator(boolean o, UAL __ual)	{ super(false,__ual); }
+	public Coordinator(UAN __uan,UniversalActor.State sourceActor)	{ this(__uan, null, sourceActor); }
+	public Coordinator(UAL __ual,UniversalActor.State sourceActor)	{ this(null, __ual, sourceActor); }
+	public Coordinator(UniversalActor.State sourceActor)		{ this(null, null, sourceActor);  }
+	public Coordinator()		{  }
+	public Coordinator(UAN __uan, UAL __ual, Object obj) {
 		//decide the type of sourceActor
 		//if obj is null, the actor must be the startup actor.
 		//if obj is an actorReference, this actor is created by a remote actor
@@ -114,7 +114,7 @@ public class Main extends UniversalActor  {
 			      setSource(sourceActor.getUAN(), sourceActor.getUAL());
 			      activateGC();
 			    }
-			    createRemotely(__uan, __ual, "pa2.Main", sourceRef);
+			    createRemotely(__uan, __ual, "pa2.Coordinator", sourceRef);
 			  }
 
 			  // local creation
@@ -179,22 +179,14 @@ public class Main extends UniversalActor  {
 	}
 
 	public class State extends UniversalActor .State {
-		public Main self;
+		public Coordinator self;
 		public void updateSelf(ActorReference actorReference) {
-			((Main)actorReference).setUAL(getUAL());
-			((Main)actorReference).setUAN(getUAN());
-			self = new Main(false,getUAL());
+			((Coordinator)actorReference).setUAL(getUAL());
+			((Coordinator)actorReference).setUAN(getUAN());
+			self = new Coordinator(false,getUAL());
 			self.setUAN(getUAN());
 			self.setUAL(getUAL());
 			self.activateGC();
-		}
-
-		public void preAct(String[] arguments) {
-			getActorMemory().getInverseList().removeInverseReference("rmsp://me",1);
-			{
-				Object[] __args={arguments};
-				self.send( new Message(self,self, "act", __args, null,null,false) );
-			}
 		}
 
 		public State() {
@@ -203,7 +195,7 @@ public class Main extends UniversalActor  {
 
 		public State(UAN __uan, UAL __ual) {
 			super(__uan, __ual);
-			addClassName( "pa2.Main$State" );
+			addClassName( "pa2.Coordinator$State" );
 			addMethodsForClasses();
 		}
 
@@ -264,40 +256,71 @@ public class Main extends UniversalActor  {
 			}
 		}
 
-		public void act(String[] args) {
-			String path;
-			if (args.length>0) {path = args[0];
-}			else {path = "./pa2/data/2nmi.txt";
-}			ReaderActor reader = ((ReaderActor)new ReaderActor(this).construct());
-			{
-				// reader<-readAll(path, this)
+		pa2.Main replyTo;
+		double globalBest;
+		java.util.ArrayList bestPairs;
+		int expected, received;
+		public void computeClosest(java.util.ArrayList flights, pa2.Main replyTo) {
+			this.replyTo = replyTo;
+			this.globalBest = java.lang.Double.POSITIVE_INFINITY;
+			this.bestPairs = new java.util.ArrayList();
+			this.received = 0;
+			int n = flights.size();
+			if (n<2) {{
 				{
-					Object _arguments[] = { path, this };
-					Message message = new Message( self, reader, "readAll", _arguments, null, null );
-					__messages.add( message );
+					// replyTo<-afterClosest(java.lang.Double.NaN, bestPairs)
+					{
+						Object _arguments[] = { java.lang.Double.NaN, bestPairs };
+						Message message = new Message( self, replyTo, "afterClosest", _arguments, null, null );
+						__messages.add( message );
+					}
 				}
-			}
-		}
-		public void afterRead(java.util.ArrayList flights) {
-			System.out.println("Unique flights: "+flights.size());
-			Coordinator coord = ((Coordinator)new Coordinator(this).construct());
-			{
-				// coord<-computeClosest(flights, this)
-				{
-					Object _arguments[] = { flights, this };
-					Message message = new Message( self, coord, "computeClosest", _arguments, null, null );
-					__messages.add( message );
-				}
-			}
-		}
-		public void afterClosest(double dmin, java.util.ArrayList pairs) {
-			if (java.lang.Double.isNaN(dmin)||pairs.size()==0) {{
-				System.out.println("No pairs.");
 				return;
 			}
-}			System.out.println(String.format(java.util.Locale.US, "%.6f", dmin));
-			java.util.Iterator it = pairs.iterator();
-			while (it.hasNext()) System.out.println((String)it.next());
+}			int workers = 4;
+			if (n<100) {workers = java.lang.Math.min(2, n);
+}			int chunk = (n+workers-1)/workers;
+			expected = 0;
+			for (int w = 0; w<workers; w++){
+				int iStart = w*chunk;
+				int iEnd = java.lang.Math.min(n-2, (w+1)*chunk-1);
+				if (iStart>=n-1) {break;}				PairWorker pw = ((PairWorker)new PairWorker(this).construct());
+				expected++;
+				{
+					// pw<-findMinPairs(flights, iStart, iEnd, this)
+					{
+						Object _arguments[] = { flights, iStart, iEnd, this };
+						Message message = new Message( self, pw, "findMinPairs", _arguments, null, null );
+						__messages.add( message );
+					}
+				}
+			}
 		}
+		public void report(double best, java.util.ArrayList pairs) {
+			received++;
+			if (best<globalBest-1e-9) {{
+				globalBest = best;
+				bestPairs = pairs;
+			}
+}			else {if (java.lang.Math.abs(best-globalBest)<=1e-9) {{
+				java.util.HashSet seen = new java.util.HashSet(bestPairs);
+				java.util.Iterator it = pairs.iterator();
+				while (it.hasNext()) {
+					Object s = it.next();
+					if (!seen.contains(s)) {{
+						bestPairs.add(s);
+						seen.add(s);
+					}
+}				}
+			}
+}}			if (received==expected) {			{
+				// replyTo<-afterClosest(globalBest, bestPairs)
+				{
+					Object _arguments[] = { globalBest, bestPairs };
+					Message message = new Message( self, replyTo, "afterClosest", _arguments, null, null );
+					__messages.add( message );
+				}
+			}
+}		}
 	}
 }

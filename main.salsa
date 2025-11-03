@@ -1,20 +1,28 @@
 module pa2;
 
 behavior Main {
-
   void act(String[] args) {
     String path;
     if (args.length > 0) path = args[0];
-    else path = "./data/2nmi.txt";
-
-    io.ReaderActor reader = new io.ReaderActor();
-    // pass 'this' so the reader can reply to afterRead(...)
+    else path = "./pa2/data/2nmi.txt";    // adjust if your file lives elsewhere
+    ReaderActor reader = new ReaderActor();
     reader <- readAll(path, this);
   }
 
-  // Use raw ArrayList (no generics in 1.1.x headers)
   void afterRead(java.util.ArrayList flights) {
     System.out.println("Unique flights: " + flights.size());
-    // next: hand off to your pairing/worker stage
+    Coordinator coord = new Coordinator();
+    coord <- computeClosest(flights, this);
+  }
+
+  void afterClosest(double dmin, java.util.ArrayList pairs) {
+    if (java.lang.Double.isNaN(dmin) || pairs.size()==0) {
+      System.out.println("No pairs.");
+      return;
+    }
+    // Output d1 block
+    System.out.println(String.format(java.util.Locale.US, "%.6f", dmin));
+    java.util.Iterator it = pairs.iterator();
+    while (it.hasNext()) System.out.println((String) it.next());
   }
 }

@@ -1,0 +1,26 @@
+module pa2;
+
+import pa2.Flight;
+import pa2.Geo;
+
+behavior PairWorker {
+  void findMinPairs(java.util.ArrayList flights, int iStart, int iEnd, pa2.Coordinator parent) {
+    double best = java.lang.Double.POSITIVE_INFINITY;
+    java.util.ArrayList pairs = new java.util.ArrayList();
+    int n = flights.size();
+
+    for (int i = iStart; i <= iEnd && i < n-1; i++) {
+      Flight fi = (Flight) flights.get(i);
+      for (int j = i+1; j < n; j++) {
+        Flight fj = (Flight) flights.get(j);
+        double d = Geo.distanceNmi(fi.latDeg, fi.lonDeg, fj.latDeg, fj.lonDeg);
+        if (d < best - 1e-9) {
+          best = d; pairs.clear(); pairs.add(fi.id + " " + fj.id);
+        } else if (java.lang.Math.abs(d - best) <= 1e-9) {
+          pairs.add(fi.id + " " + fj.id);
+        }
+      }
+    }
+    parent <- report(best, pairs);
+  }
+}

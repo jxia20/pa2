@@ -1,0 +1,65 @@
+module pa2;
+
+import pa2.Flight;
+import salsa.language.UniversalActor;
+
+behavior ReaderActor {
+
+  void readAll(String path, UniversalActor.State replyTo) {
+    java.util.LinkedHashMap map = new java.util.LinkedHashMap();
+
+    try {
+      java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader(path));
+      while (true) {
+        String line = br.readLine();
+        if (line == null) break;
+        line = line.trim();
+        if (line.length() == 0) continue;
+        if (line.startsWith("#")) continue;
+        if (startsWithIgnoreCase(line, "id")) continue;
+
+        String[] fields = line.split(",");
+        if (fields.length < 7) fields = line.split("\\s+");
+        if (fields.length < 7) continue;
+
+        boolean bad = false;
+        for (int i = 0; i < 7; i++) {
+          fields[i] = fields[i].trim();
+          if (fields[i].length() == 0) { bad = true; break; }
+        }
+        if (bad) continue;
+
+        String id = fields[0];
+        try {
+          double lat  = Double.parseDouble(fields[1]);
+          double lon  = Double.parseDouble(fields[2]);
+          double trak = Double.parseDouble(fields[3]);
+          double hs   = Double.parseDouble(fields[4]);
+          double alt  = Double.parseDouble(fields[5]);
+          double vs   = Double.parseDouble(fields[6]);
+          if (lat < -90 || lat > 90) continue;
+          if (lon < -180 || lon > 180) continue;
+
+          map.put(id, new Flight(id, lat, lon, trak, hs, alt, vs));
+        } catch (Exception ignore) {}
+      }
+      br.close();
+    } catch (java.io.IOException ioe) {
+      System.err.println("ReaderActor I/O: " + ioe);
+    } catch (Exception e) {
+      System.err.println("ReaderActor error: " + e);
+    }
+
+    java.util.ArrayList list = new java.util.ArrayList();
+    java.util.Iterator it = map.values().iterator();
+    while (it.hasNext()) list.add(it.next());
+
+    // Convert the State to a proper Main actor reference, then reply
+    pa2.Main mainRef = pa2.Main.getReferenceByLocation(replyTo.getUAL());
+    mainRef <- afterRead(list);
+  }
+
+  boolean startsWithIgnoreCase(String s, String prefix) {
+    return s.regionMatches(true, 0, prefix, 0, prefix.length());
+  }
+}

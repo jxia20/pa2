@@ -31,8 +31,10 @@ import salsa.resources.ActorService;
 
 // End SALSA compiler generated import delcarations.
 
+import pa2.Flight;
+import salsa.language.UniversalActor;
 
-public class Main extends UniversalActor  {
+public class ReaderActor extends UniversalActor  {
 	public static void main(String args[]) {
 		UAN uan = null;
 		UAL ual = null;
@@ -67,7 +69,7 @@ public class Main extends UniversalActor  {
 			ual = new UAL( ServiceFactory.getTheater().getLocation() + System.getProperty("identifier"));
 		}
 		RunTime.receivedMessage();
-		Main instance = (Main)new Main(uan, ual,null).construct();
+		ReaderActor instance = (ReaderActor)new ReaderActor(uan, ual,null).construct();
 		gc.WeakReference instanceRef=new gc.WeakReference(uan,ual);
 		{
 			Object[] _arguments = { args };
@@ -80,18 +82,18 @@ public class Main extends UniversalActor  {
 		RunTime.finishedProcessingMessage();
 	}
 
-	public static ActorReference getReferenceByName(UAN uan)	{ return new Main(false, uan); }
-	public static ActorReference getReferenceByName(String uan)	{ return Main.getReferenceByName(new UAN(uan)); }
-	public static ActorReference getReferenceByLocation(UAL ual)	{ return new Main(false, ual); }
+	public static ActorReference getReferenceByName(UAN uan)	{ return new ReaderActor(false, uan); }
+	public static ActorReference getReferenceByName(String uan)	{ return ReaderActor.getReferenceByName(new UAN(uan)); }
+	public static ActorReference getReferenceByLocation(UAL ual)	{ return new ReaderActor(false, ual); }
 
-	public static ActorReference getReferenceByLocation(String ual)	{ return Main.getReferenceByLocation(new UAL(ual)); }
-	public Main(boolean o, UAN __uan)	{ super(false,__uan); }
-	public Main(boolean o, UAL __ual)	{ super(false,__ual); }
-	public Main(UAN __uan,UniversalActor.State sourceActor)	{ this(__uan, null, sourceActor); }
-	public Main(UAL __ual,UniversalActor.State sourceActor)	{ this(null, __ual, sourceActor); }
-	public Main(UniversalActor.State sourceActor)		{ this(null, null, sourceActor);  }
-	public Main()		{  }
-	public Main(UAN __uan, UAL __ual, Object obj) {
+	public static ActorReference getReferenceByLocation(String ual)	{ return ReaderActor.getReferenceByLocation(new UAL(ual)); }
+	public ReaderActor(boolean o, UAN __uan)	{ super(false,__uan); }
+	public ReaderActor(boolean o, UAL __ual)	{ super(false,__ual); }
+	public ReaderActor(UAN __uan,UniversalActor.State sourceActor)	{ this(__uan, null, sourceActor); }
+	public ReaderActor(UAL __ual,UniversalActor.State sourceActor)	{ this(null, __ual, sourceActor); }
+	public ReaderActor(UniversalActor.State sourceActor)		{ this(null, null, sourceActor);  }
+	public ReaderActor()		{  }
+	public ReaderActor(UAN __uan, UAL __ual, Object obj) {
 		//decide the type of sourceActor
 		//if obj is null, the actor must be the startup actor.
 		//if obj is an actorReference, this actor is created by a remote actor
@@ -114,7 +116,7 @@ public class Main extends UniversalActor  {
 			      setSource(sourceActor.getUAN(), sourceActor.getUAL());
 			      activateGC();
 			    }
-			    createRemotely(__uan, __ual, "pa2.Main", sourceRef);
+			    createRemotely(__uan, __ual, "pa2.ReaderActor", sourceRef);
 			  }
 
 			  // local creation
@@ -179,22 +181,14 @@ public class Main extends UniversalActor  {
 	}
 
 	public class State extends UniversalActor .State {
-		public Main self;
+		public ReaderActor self;
 		public void updateSelf(ActorReference actorReference) {
-			((Main)actorReference).setUAL(getUAL());
-			((Main)actorReference).setUAN(getUAN());
-			self = new Main(false,getUAL());
+			((ReaderActor)actorReference).setUAL(getUAL());
+			((ReaderActor)actorReference).setUAN(getUAN());
+			self = new ReaderActor(false,getUAL());
 			self.setUAN(getUAN());
 			self.setUAL(getUAL());
 			self.activateGC();
-		}
-
-		public void preAct(String[] arguments) {
-			getActorMemory().getInverseList().removeInverseReference("rmsp://me",1);
-			{
-				Object[] __args={arguments};
-				self.send( new Message(self,self, "act", __args, null,null,false) );
-			}
 		}
 
 		public State() {
@@ -203,7 +197,7 @@ public class Main extends UniversalActor  {
 
 		public State(UAN __uan, UAL __ual) {
 			super(__uan, __ual);
-			addClassName( "pa2.Main$State" );
+			addClassName( "pa2.ReaderActor$State" );
 			addMethodsForClasses();
 		}
 
@@ -264,40 +258,60 @@ public class Main extends UniversalActor  {
 			}
 		}
 
-		public void act(String[] args) {
-			String path;
-			if (args.length>0) {path = args[0];
-}			else {path = "./pa2/data/2nmi.txt";
-}			ReaderActor reader = ((ReaderActor)new ReaderActor(this).construct());
+		public void readAll(String path, UniversalActor.State replyTo) {
+			java.util.LinkedHashMap map = new java.util.LinkedHashMap();
+			try {
+				java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader(path));
+				while (true) {
+					String line = br.readLine();
+					if (line==null) {break;}					line = line.trim();
+					if (line.length()==0) {continue;}					if (line.startsWith("#")) {continue;}					if (startsWithIgnoreCase(line, "id")) {continue;}					String[] fields = line.split(",");
+					if (fields.length<7) {fields = line.split("\\s+");
+}					if (fields.length<7) {continue;}					boolean bad = false;
+					for (int i = 0; i<7; i++){
+						fields[i] = fields[i].trim();
+						if (fields[i].length()==0) {{
+							bad = true;
+break;						}
+}					}
+					if (bad) {continue;}					String id = fields[0];
+					try {
+						double lat = Double.parseDouble(fields[1]);
+						double lon = Double.parseDouble(fields[2]);
+						double trak = Double.parseDouble(fields[3]);
+						double hs = Double.parseDouble(fields[4]);
+						double alt = Double.parseDouble(fields[5]);
+						double vs = Double.parseDouble(fields[6]);
+						if (lat<-90||lat>90) {continue;}						if (lon<-180||lon>180) {continue;}						map.put(id, new Flight(id, lat, lon, trak, hs, alt, vs));
+					}
+					catch (Exception ignore) {
+					}
+
+				}
+				br.close();
+			}
+			catch (java.io.IOException ioe) {
+				System.err.println("ReaderActor I/O: "+ioe);
+			}
+			catch (Exception e) {
+				System.err.println("ReaderActor error: "+e);
+			}
+
+			java.util.ArrayList list = new java.util.ArrayList();
+			java.util.Iterator it = map.values().iterator();
+			while (it.hasNext()) list.add(it.next());
+			pa2.Main mainRef = pa2.Main.getReferenceByLocation(replyTo.getUAL());
 			{
-				// reader<-readAll(path, this)
+				// mainRef<-afterRead(list)
 				{
-					Object _arguments[] = { path, this };
-					Message message = new Message( self, reader, "readAll", _arguments, null, null );
+					Object _arguments[] = { list };
+					Message message = new Message( self, mainRef, "afterRead", _arguments, null, null );
 					__messages.add( message );
 				}
 			}
 		}
-		public void afterRead(java.util.ArrayList flights) {
-			System.out.println("Unique flights: "+flights.size());
-			Coordinator coord = ((Coordinator)new Coordinator(this).construct());
-			{
-				// coord<-computeClosest(flights, this)
-				{
-					Object _arguments[] = { flights, this };
-					Message message = new Message( self, coord, "computeClosest", _arguments, null, null );
-					__messages.add( message );
-				}
-			}
-		}
-		public void afterClosest(double dmin, java.util.ArrayList pairs) {
-			if (java.lang.Double.isNaN(dmin)||pairs.size()==0) {{
-				System.out.println("No pairs.");
-				return;
-			}
-}			System.out.println(String.format(java.util.Locale.US, "%.6f", dmin));
-			java.util.Iterator it = pairs.iterator();
-			while (it.hasNext()) System.out.println((String)it.next());
+		public boolean startsWithIgnoreCase(String s, String prefix) {
+			return s.regionMatches(true, 0, prefix, 0, prefix.length());
 		}
 	}
 }

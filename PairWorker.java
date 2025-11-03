@@ -31,8 +31,10 @@ import salsa.resources.ActorService;
 
 // End SALSA compiler generated import delcarations.
 
+import pa2.Flight;
+import pa2.Geo;
 
-public class Main extends UniversalActor  {
+public class PairWorker extends UniversalActor  {
 	public static void main(String args[]) {
 		UAN uan = null;
 		UAL ual = null;
@@ -67,7 +69,7 @@ public class Main extends UniversalActor  {
 			ual = new UAL( ServiceFactory.getTheater().getLocation() + System.getProperty("identifier"));
 		}
 		RunTime.receivedMessage();
-		Main instance = (Main)new Main(uan, ual,null).construct();
+		PairWorker instance = (PairWorker)new PairWorker(uan, ual,null).construct();
 		gc.WeakReference instanceRef=new gc.WeakReference(uan,ual);
 		{
 			Object[] _arguments = { args };
@@ -80,18 +82,18 @@ public class Main extends UniversalActor  {
 		RunTime.finishedProcessingMessage();
 	}
 
-	public static ActorReference getReferenceByName(UAN uan)	{ return new Main(false, uan); }
-	public static ActorReference getReferenceByName(String uan)	{ return Main.getReferenceByName(new UAN(uan)); }
-	public static ActorReference getReferenceByLocation(UAL ual)	{ return new Main(false, ual); }
+	public static ActorReference getReferenceByName(UAN uan)	{ return new PairWorker(false, uan); }
+	public static ActorReference getReferenceByName(String uan)	{ return PairWorker.getReferenceByName(new UAN(uan)); }
+	public static ActorReference getReferenceByLocation(UAL ual)	{ return new PairWorker(false, ual); }
 
-	public static ActorReference getReferenceByLocation(String ual)	{ return Main.getReferenceByLocation(new UAL(ual)); }
-	public Main(boolean o, UAN __uan)	{ super(false,__uan); }
-	public Main(boolean o, UAL __ual)	{ super(false,__ual); }
-	public Main(UAN __uan,UniversalActor.State sourceActor)	{ this(__uan, null, sourceActor); }
-	public Main(UAL __ual,UniversalActor.State sourceActor)	{ this(null, __ual, sourceActor); }
-	public Main(UniversalActor.State sourceActor)		{ this(null, null, sourceActor);  }
-	public Main()		{  }
-	public Main(UAN __uan, UAL __ual, Object obj) {
+	public static ActorReference getReferenceByLocation(String ual)	{ return PairWorker.getReferenceByLocation(new UAL(ual)); }
+	public PairWorker(boolean o, UAN __uan)	{ super(false,__uan); }
+	public PairWorker(boolean o, UAL __ual)	{ super(false,__ual); }
+	public PairWorker(UAN __uan,UniversalActor.State sourceActor)	{ this(__uan, null, sourceActor); }
+	public PairWorker(UAL __ual,UniversalActor.State sourceActor)	{ this(null, __ual, sourceActor); }
+	public PairWorker(UniversalActor.State sourceActor)		{ this(null, null, sourceActor);  }
+	public PairWorker()		{  }
+	public PairWorker(UAN __uan, UAL __ual, Object obj) {
 		//decide the type of sourceActor
 		//if obj is null, the actor must be the startup actor.
 		//if obj is an actorReference, this actor is created by a remote actor
@@ -114,7 +116,7 @@ public class Main extends UniversalActor  {
 			      setSource(sourceActor.getUAN(), sourceActor.getUAL());
 			      activateGC();
 			    }
-			    createRemotely(__uan, __ual, "pa2.Main", sourceRef);
+			    createRemotely(__uan, __ual, "pa2.PairWorker", sourceRef);
 			  }
 
 			  // local creation
@@ -179,22 +181,14 @@ public class Main extends UniversalActor  {
 	}
 
 	public class State extends UniversalActor .State {
-		public Main self;
+		public PairWorker self;
 		public void updateSelf(ActorReference actorReference) {
-			((Main)actorReference).setUAL(getUAL());
-			((Main)actorReference).setUAN(getUAN());
-			self = new Main(false,getUAL());
+			((PairWorker)actorReference).setUAL(getUAL());
+			((PairWorker)actorReference).setUAN(getUAN());
+			self = new PairWorker(false,getUAL());
 			self.setUAN(getUAN());
 			self.setUAL(getUAL());
 			self.activateGC();
-		}
-
-		public void preAct(String[] arguments) {
-			getActorMemory().getInverseList().removeInverseReference("rmsp://me",1);
-			{
-				Object[] __args={arguments};
-				self.send( new Message(self,self, "act", __args, null,null,false) );
-			}
 		}
 
 		public State() {
@@ -203,7 +197,7 @@ public class Main extends UniversalActor  {
 
 		public State(UAN __uan, UAL __ual) {
 			super(__uan, __ual);
-			addClassName( "pa2.Main$State" );
+			addClassName( "pa2.PairWorker$State" );
 			addMethodsForClasses();
 		}
 
@@ -264,40 +258,33 @@ public class Main extends UniversalActor  {
 			}
 		}
 
-		public void act(String[] args) {
-			String path;
-			if (args.length>0) {path = args[0];
-}			else {path = "./pa2/data/2nmi.txt";
-}			ReaderActor reader = ((ReaderActor)new ReaderActor(this).construct());
+		public void findMinPairs(java.util.ArrayList flights, int iStart, int iEnd, pa2.Coordinator parent) {
+			double best = java.lang.Double.POSITIVE_INFINITY;
+			java.util.ArrayList pairs = new java.util.ArrayList();
+			int n = flights.size();
+			for (int i = iStart; i<=iEnd&&i<n-1; i++){
+				Flight fi = (Flight)flights.get(i);
+				for (int j = i+1; j<n; j++){
+					Flight fj = (Flight)flights.get(j);
+					double d = Geo.distanceNmi(fi.latDeg, fi.lonDeg, fj.latDeg, fj.lonDeg);
+					if (d<best-1e-9) {{
+						best = d;
+						pairs.clear();
+						pairs.add(fi.id+" "+fj.id);
+					}
+}					else {if (java.lang.Math.abs(d-best)<=1e-9) {{
+						pairs.add(fi.id+" "+fj.id);
+					}
+}}				}
+			}
 			{
-				// reader<-readAll(path, this)
+				// parent<-report(best, pairs)
 				{
-					Object _arguments[] = { path, this };
-					Message message = new Message( self, reader, "readAll", _arguments, null, null );
+					Object _arguments[] = { best, pairs };
+					Message message = new Message( self, parent, "report", _arguments, null, null );
 					__messages.add( message );
 				}
 			}
-		}
-		public void afterRead(java.util.ArrayList flights) {
-			System.out.println("Unique flights: "+flights.size());
-			Coordinator coord = ((Coordinator)new Coordinator(this).construct());
-			{
-				// coord<-computeClosest(flights, this)
-				{
-					Object _arguments[] = { flights, this };
-					Message message = new Message( self, coord, "computeClosest", _arguments, null, null );
-					__messages.add( message );
-				}
-			}
-		}
-		public void afterClosest(double dmin, java.util.ArrayList pairs) {
-			if (java.lang.Double.isNaN(dmin)||pairs.size()==0) {{
-				System.out.println("No pairs.");
-				return;
-			}
-}			System.out.println(String.format(java.util.Locale.US, "%.6f", dmin));
-			java.util.Iterator it = pairs.iterator();
-			while (it.hasNext()) System.out.println((String)it.next());
 		}
 	}
 }
