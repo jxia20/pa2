@@ -288,9 +288,9 @@ public class Coordinator extends UniversalActor  {
 				if (iStart>=n-1) {break;}				PairWorker pw = ((PairWorker)new PairWorker(this).construct());
 				expected++;
 				{
-					// pw<-findMinPairs(flights, iStart, iEnd, this)
+					// pw<-findMinPairs(flights, iStart, iEnd, this.getUAL())
 					{
-						Object _arguments[] = { flights, iStart, iEnd, this };
+						Object _arguments[] = { flights, iStart, iEnd, this.getUAL() };
 						Message message = new Message( self, pw, "findMinPairs", _arguments, null, null );
 						__messages.add( message );
 					}

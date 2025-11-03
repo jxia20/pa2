@@ -28,7 +28,7 @@ behavior Coordinator {
       if (iStart >= n-1) break;
       PairWorker pw = new PairWorker();
       expected++;
-      pw <- findMinPairs(flights, iStart, iEnd, this);
+      pw <- findMinPairs(flights, iStart, iEnd, this.getUAL());
     }
   }
 
