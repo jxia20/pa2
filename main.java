@@ -292,12 +292,12 @@ public class Main extends UniversalActor  {
 				}
 			}
 		}
-		public void afterClosest(double dmin, java.util.ArrayList pairs) {
-			if (java.lang.Double.isNaN(dmin)||pairs.size()==0) {{
+		public void afterClosest(double d1, java.util.ArrayList pairs) {
+			if (java.lang.Double.isNaN(d1)||pairs.size()==0) {{
 				System.out.println("No pairs.");
 				return;
 			}
-}			System.out.println(String.format(java.util.Locale.US, "%.6f", dmin));
+}			System.out.println(String.format(java.util.Locale.US, "%.6f", d1));
 			java.util.Iterator it = pairs.iterator();
 			while (it.hasNext()) System.out.println((String)it.next());
 			Coordinator coord = ((Coordinator)new Coordinator(this).construct());
@@ -312,6 +312,24 @@ public class Main extends UniversalActor  {
 		}
 		public void afterDcpa(double d2, java.util.ArrayList rows) {
 			System.out.println(String.format(java.util.Locale.US, "%.6f", d2));
+			java.util.Iterator it = rows.iterator();
+			while (it.hasNext()) System.out.println((String)it.next());
+			Coordinator coord = ((Coordinator)new Coordinator(this).construct());
+			{
+				// coord<-computeTcpa(this.flightsCache, this.getUAL())
+				{
+					Object _arguments[] = { this.flightsCache, this.getUAL() };
+					Message message = new Message( self, coord, "computeTcpa", _arguments, null, null );
+					__messages.add( message );
+				}
+			}
+		}
+		public void afterTcpa(double t3, java.util.ArrayList rows) {
+			if (t3==java.lang.Double.POSITIVE_INFINITY||rows.size()==0) {{
+				System.out.println("NaN");
+				return;
+			}
+}			System.out.println(String.format(java.util.Locale.US, "%.3f", t3));
 			java.util.Iterator it = rows.iterator();
 			while (it.hasNext()) System.out.println((String)it.next());
 		}
