@@ -270,11 +270,50 @@ public class Coordinator extends UniversalActor  {
 		java.util.ArrayList t3Rows;
 		int t3Expected;
 		int t3Received;
+		java.util.ArrayList theaterBases;
+		int rr;
+		public void loadTheatersFromEnv() {
+			theaterBases = new java.util.ArrayList();
+			rr = 0;
+			try {
+				String env = java.lang.System.getenv("WORKER_THEATERS");
+				if (env==null) {				return;
+}				env = env.trim();
+				if (env.length()==0) {				return;
+}				String[] parts = env.split(",");
+				for (int i = 0; i<parts.length; i++){
+					String b = parts[i].trim();
+					if (b.length()==0) {continue;}					if (!b.endsWith("/UAL/")) {{
+						if (!b.endsWith("/")) {b = b+"/";
+}						b = b+"UAL/";
+					}
+}					theaterBases.add(b);
+				}
+			}
+			catch (Exception __e) {
+			}
+
+		}
+		public salsa.naming.UAL pickWorkerUAL(String tag) {
+			if (theaterBases==null||theaterBases.size()==0) {			return null;
+}			String base = (String)theaterBases.get(rr%theaterBases.size());
+			rr++;
+			String id = tag+"-"+java.lang.System.currentTimeMillis()+"-"+rr;
+			return new salsa.naming.UAL(base+id);
+		}
 		public void computeClosest(java.util.ArrayList flights, salsa.naming.UAL replyUAL) {
 			this.replyRef = pa2.Main.getReferenceByLocation(replyUAL);
 			this.d1Best = java.lang.Double.POSITIVE_INFINITY;
 			this.d1Pairs = new java.util.ArrayList();
 			this.d1Received = 0;
+			{
+				// loadTheatersFromEnv()
+				{
+					Object _arguments[] = {  };
+					Message message = new Message( self, self, "loadTheatersFromEnv", _arguments, null, null );
+					__messages.add( message );
+				}
+			}
 			int n = flights.size();
 			if (n<2) {{
 				{
@@ -294,17 +333,32 @@ public class Coordinator extends UniversalActor  {
 			for (int w = 0; w<workers; w++){
 				int iStart = w*chunk;
 				int iEnd = java.lang.Math.min(n-2, (w+1)*chunk-1);
-				if (iStart>=n-1) {break;}				PairWorker pw = ((PairWorker)new PairWorker(this).construct());
-				d1Expected++;
-				{
-					// pw<-findMinPairs(flights, iStart, iEnd, this.getUAL())
+				if (iStart>=n-1) {break;}				salsa.naming.UAL ual = pickWorkerUAL("pair");
+				if (ual==null) {{
+					PairWorker pw = ((PairWorker)new PairWorker(this).construct());
+					d1Expected++;
 					{
-						Object _arguments[] = { flights, iStart, iEnd, this.getUAL() };
-						Message message = new Message( self, pw, "findMinPairs", _arguments, null, null );
-						__messages.add( message );
+						// pw<-findMinPairs(flights, iStart, iEnd, this.getUAL())
+						{
+							Object _arguments[] = { flights, iStart, iEnd, this.getUAL() };
+							Message message = new Message( self, pw, "findMinPairs", _arguments, null, null );
+							__messages.add( message );
+						}
 					}
 				}
-			}
+}				else {{
+					ActorReference pw = pa2.PairWorker.getReferenceByLocation(ual);
+					d1Expected++;
+					{
+						// pw<-findMinPairs(flights, iStart, iEnd, this.getUAL())
+						{
+							Object _arguments[] = { flights, iStart, iEnd, this.getUAL() };
+							Message message = new Message( self, pw, "findMinPairs", _arguments, null, null );
+							__messages.add( message );
+						}
+					}
+				}
+}			}
 		}
 		public void report(double best, java.util.ArrayList pairs) {
 			d1Received++;
@@ -356,17 +410,32 @@ public class Coordinator extends UniversalActor  {
 			for (int w = 0; w<workers; w++){
 				int iStart = w*chunk;
 				int iEnd = java.lang.Math.min(n-2, (w+1)*chunk-1);
-				if (iStart>=n-1) {break;}				DcpaWorker wk = ((DcpaWorker)new DcpaWorker(this).construct());
-				d2Expected++;
-				{
-					// wk<-findMinDcpa(flights, iStart, iEnd, this.getUAL())
+				if (iStart>=n-1) {break;}				salsa.naming.UAL ual = pickWorkerUAL("dcpa");
+				if (ual==null) {{
+					DcpaWorker wk = ((DcpaWorker)new DcpaWorker(this).construct());
+					d2Expected++;
 					{
-						Object _arguments[] = { flights, iStart, iEnd, this.getUAL() };
-						Message message = new Message( self, wk, "findMinDcpa", _arguments, null, null );
-						__messages.add( message );
+						// wk<-findMinDcpa(flights, iStart, iEnd, this.getUAL())
+						{
+							Object _arguments[] = { flights, iStart, iEnd, this.getUAL() };
+							Message message = new Message( self, wk, "findMinDcpa", _arguments, null, null );
+							__messages.add( message );
+						}
 					}
 				}
-			}
+}				else {{
+					ActorReference wk = pa2.DcpaWorker.getReferenceByLocation(ual);
+					d2Expected++;
+					{
+						// wk<-findMinDcpa(flights, iStart, iEnd, this.getUAL())
+						{
+							Object _arguments[] = { flights, iStart, iEnd, this.getUAL() };
+							Message message = new Message( self, wk, "findMinDcpa", _arguments, null, null );
+							__messages.add( message );
+						}
+					}
+				}
+}			}
 		}
 		public void reportDcpa(double best, java.util.ArrayList rows) {
 			d2Received++;
@@ -400,17 +469,32 @@ public class Coordinator extends UniversalActor  {
 			for (int w = 0; w<workers; w++){
 				int iStart = w*chunk;
 				int iEnd = java.lang.Math.min(n-2, (w+1)*chunk-1);
-				if (iStart>=n-1) {break;}				TcpaWorker wk = ((TcpaWorker)new TcpaWorker(this).construct());
-				t3Expected++;
-				{
-					// wk<-findSoonestTcpa(flights, iStart, iEnd, this.getUAL())
+				if (iStart>=n-1) {break;}				salsa.naming.UAL ual = pickWorkerUAL("tcpa");
+				if (ual==null) {{
+					TcpaWorker wk = ((TcpaWorker)new TcpaWorker(this).construct());
+					t3Expected++;
 					{
-						Object _arguments[] = { flights, iStart, iEnd, this.getUAL() };
-						Message message = new Message( self, wk, "findSoonestTcpa", _arguments, null, null );
-						__messages.add( message );
+						// wk<-findSoonestTcpa(flights, iStart, iEnd, this.getUAL())
+						{
+							Object _arguments[] = { flights, iStart, iEnd, this.getUAL() };
+							Message message = new Message( self, wk, "findSoonestTcpa", _arguments, null, null );
+							__messages.add( message );
+						}
 					}
 				}
-			}
+}				else {{
+					ActorReference wk = pa2.TcpaWorker.getReferenceByLocation(ual);
+					t3Expected++;
+					{
+						// wk<-findSoonestTcpa(flights, iStart, iEnd, this.getUAL())
+						{
+							Object _arguments[] = { flights, iStart, iEnd, this.getUAL() };
+							Message message = new Message( self, wk, "findSoonestTcpa", _arguments, null, null );
+							__messages.add( message );
+						}
+					}
+				}
+}			}
 		}
 		public void reportTcpa(double bestT, java.util.ArrayList rows) {
 			t3Received++;

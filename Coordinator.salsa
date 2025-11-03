@@ -24,12 +24,52 @@ behavior Coordinator {
   int t3Expected;
   int t3Received;
 
+  // ---- remote theaters (optional) ----
+  java.util.ArrayList theaterBases;   // ArrayList<String> of base UALs: rmsp://host:port/UAL/
+  int rr;                             // round-robin index
+
+  // ===== helpers =====
+  void loadTheatersFromEnv() {
+    theaterBases = new java.util.ArrayList();
+    rr = 0;
+    try {
+      String env = java.lang.System.getenv("WORKER_THEATERS");
+      if (env == null) return;
+      env = env.trim();
+      if (env.length() == 0) return;
+      String[] parts = env.split(",");
+      for (int i=0;i<parts.length;i++) {
+        String b = parts[i].trim();
+        if (b.length()==0) continue;
+        // ensure it ends with /UAL/
+        if (!b.endsWith("/UAL/")) {
+          if (!b.endsWith("/")) b = b + "/";
+          b = b + "UAL/";
+        }
+        theaterBases.add(b);
+      }
+    } catch (Exception __e) {
+      // ignore; fallback to local workers
+    }
+  }
+
+  salsa.naming.UAL pickWorkerUAL(String tag) {
+    if (theaterBases==null || theaterBases.size()==0) return null;
+    String base = (String)theaterBases.get(rr % theaterBases.size());
+    rr++;
+    // unique id per worker
+    String id = tag + "-" + java.lang.System.currentTimeMillis() + "-" + rr;
+    return new salsa.naming.UAL(base + id);
+  }
+
   // ===== d1 stage =====
   void computeClosest(java.util.ArrayList flights, salsa.naming.UAL replyUAL) {
     this.replyRef = pa2.Main.getReferenceByLocation(replyUAL);
     this.d1Best = java.lang.Double.POSITIVE_INFINITY;
     this.d1Pairs = new java.util.ArrayList();
     this.d1Received = 0;
+
+    loadTheatersFromEnv();
 
     int n = flights.size();
     if (n < 2) { replyRef <- afterClosest(java.lang.Double.NaN, d1Pairs); return; }
@@ -43,9 +83,19 @@ behavior Coordinator {
       int iStart = w * chunk;
       int iEnd   = java.lang.Math.min(n - 2, (w + 1) * chunk - 1);
       if (iStart >= n - 1) break;
-      PairWorker pw = new PairWorker();
-      d1Expected++;
-      pw <- findMinPairs(flights, iStart, iEnd, this.getUAL());
+
+      salsa.naming.UAL ual = pickWorkerUAL("pair");
+      if (ual == null) {
+        // local
+        PairWorker pw = new PairWorker();
+        d1Expected++;
+        pw <- findMinPairs(flights, iStart, iEnd, this.getUAL());
+      } else {
+        // remote
+        ActorReference pw = pa2.PairWorker.getReferenceByLocation(ual);
+        d1Expected++;
+        pw <- findMinPairs(flights, iStart, iEnd, this.getUAL());
+      }
     }
   }
 
@@ -71,6 +121,8 @@ behavior Coordinator {
     this.d2Rows = new java.util.ArrayList();
     this.d2Received = 0;
 
+    // reuse loaded theaters
+
     int n = flights.size();
     if (n < 2) { replyRef <- afterDcpa(java.lang.Double.NaN, d2Rows); return; }
 
@@ -83,9 +135,17 @@ behavior Coordinator {
       int iStart = w * chunk;
       int iEnd   = java.lang.Math.min(n - 2, (w + 1) * chunk - 1);
       if (iStart >= n - 1) break;
-      DcpaWorker wk = new DcpaWorker();
-      d2Expected++;
-      wk <- findMinDcpa(flights, iStart, iEnd, this.getUAL());
+
+      salsa.naming.UAL ual = pickWorkerUAL("dcpa");
+      if (ual == null) {
+        DcpaWorker wk = new DcpaWorker();
+        d2Expected++;
+        wk <- findMinDcpa(flights, iStart, iEnd, this.getUAL());
+      } else {
+        ActorReference wk = pa2.DcpaWorker.getReferenceByLocation(ual);
+        d2Expected++;
+        wk <- findMinDcpa(flights, iStart, iEnd, this.getUAL());
+      }
     }
   }
 
@@ -117,9 +177,17 @@ behavior Coordinator {
       int iStart = w * chunk;
       int iEnd   = java.lang.Math.min(n - 2, (w + 1) * chunk - 1);
       if (iStart >= n - 1) break;
-      TcpaWorker wk = new TcpaWorker();
-      t3Expected++;
-      wk <- findSoonestTcpa(flights, iStart, iEnd, this.getUAL());
+
+      salsa.naming.UAL ual = pickWorkerUAL("tcpa");
+      if (ual == null) {
+        TcpaWorker wk = new TcpaWorker();
+        t3Expected++;
+        wk <- findSoonestTcpa(flights, iStart, iEnd, this.getUAL());
+      } else {
+        ActorReference wk = pa2.TcpaWorker.getReferenceByLocation(ual);
+        t3Expected++;
+        wk <- findSoonestTcpa(flights, iStart, iEnd, this.getUAL());
+      }
     }
   }
 
