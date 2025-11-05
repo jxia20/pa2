@@ -30,6 +30,7 @@ behavior Coordinator {
   String lastWorkerId;                // for pairing UAN with UAL
 
   // ===== helpers =====
+
   void loadTheatersFromEnv() {
     theaterBases = new java.util.ArrayList();
     rr = 0;
@@ -47,8 +48,7 @@ behavior Coordinator {
       for (int i = 0; i < parts.length; i++) {
         String b = parts[i].trim();
         if (b.length() == 0) continue;
-        // keep exactly what user gave; just ensure trailing slash
-        if (!b.endsWith("/")) b = b + "/";
+        if (!b.endsWith("/")) b = b + "/";  // ensure trailing slash
         theaterBases.add(b);
       }
       System.out.println("Coordinator: remote theaters = " + theaterBases.toString());
@@ -57,19 +57,48 @@ behavior Coordinator {
     }
   }
 
-  // round-robin UAL builder; also remembers the id so we can make a matching UAN
+  // replace your current pickWorkerUAL with this fully self-contained version
   salsa.naming.UAL pickWorkerUAL(String tag) {
+    // If we don't have a parsed list yet, build it now (idempotent).
+    if (theaterBases == null || theaterBases.size() == 0) {
+      theaterBases = new java.util.ArrayList();
+      rr = 0;
+
+      String raw = java.lang.System.getProperty("WORKER_THEATERS", null);
+      if (raw == null || raw.trim().length() == 0) {
+        raw = java.lang.System.getenv("WORKER_THEATERS");
+      }
+
+      System.out.println("DEBUG WORKER_THEATERS raw = " + raw);
+      if (raw != null) {
+        raw = raw.trim();
+        if (raw.length() > 0) {
+          String[] parts = raw.split(",");
+          for (int i = 0; i < parts.length; i++) {
+            String b = parts[i].trim();
+            if (b.length() == 0) continue;
+            if (!b.startsWith("rmsp://")) b = "rmsp://" + b;
+            if (!b.endsWith("/")) b = b + "/";
+            theaterBases.add(b);
+          }
+          System.out.println("Coordinator: remote theaters = " + theaterBases.toString());
+        }
+      }
+    }
+
+    // If still empty, no remote theaters → spawn local.
     if (theaterBases == null || theaterBases.size() == 0) return null;
+
+    // Round-robin UAL
     String base = (String)theaterBases.get(rr % theaterBases.size());
     rr++;
     lastWorkerId = tag + "-" + java.lang.System.currentTimeMillis() + "-" + rr;
-    // base already ends with "/"
     return new salsa.naming.UAL(base + lastWorkerId);
   }
 
-  // builds a UAN pointing to your naming server (run WWCNamingServer on -p 5050)
   salsa.naming.UAN buildWorkerUAN() {
-    return new salsa.naming.UAN("uan://127.0.0.1:5050/" + lastWorkerId);
+    // use the same id we just generated in pickWorkerUAL(...)
+    return new salsa.naming.UAN("uan://127.0.1.1:5050/" + lastWorkerId);
   }
 
   // ===== d1 stage =====
@@ -78,8 +107,6 @@ behavior Coordinator {
     this.d1Best = java.lang.Double.POSITIVE_INFINITY;
     this.d1Pairs = new java.util.ArrayList();
     this.d1Received = 0;
-
-    loadTheatersFromEnv();
 
     int n = flights.size();
     if (n < 2) { replyRef <- afterClosest(java.lang.Double.NaN, d1Pairs); return; }
@@ -95,6 +122,8 @@ behavior Coordinator {
       if (iStart >= n - 1) break;
 
       salsa.naming.UAL ual = pickWorkerUAL("pair");
+      System.out.println("DEBUG pickWorkerUAL -> " + ual);
+
       if (ual == null) {
         System.out.println("Coordinator: local PairWorker for range [" + iStart + ".." + iEnd + "]");
         PairWorker pw = new PairWorker();
@@ -147,6 +176,8 @@ behavior Coordinator {
       if (iStart >= n - 1) break;
 
       salsa.naming.UAL ual = pickWorkerUAL("dcpa");
+      System.out.println("DEBUG pickWorkerUAL -> " + ual);
+
       if (ual == null) {
         System.out.println("Coordinator: local DcpaWorker for range [" + iStart + ".." + iEnd + "]");
         DcpaWorker wk = new DcpaWorker();
@@ -193,6 +224,8 @@ behavior Coordinator {
       if (iStart >= n - 1) break;
 
       salsa.naming.UAL ual = pickWorkerUAL("tcpa");
+      System.out.println("DEBUG pickWorkerUAL -> " + ual);
+      
       if (ual == null) {
         System.out.println("Coordinator: local TcpaWorker for range [" + iStart + ".." + iEnd + "]");
         TcpaWorker wk = new TcpaWorker();
