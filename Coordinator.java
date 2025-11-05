@@ -289,7 +289,11 @@ public class Coordinator extends UniversalActor  {
 }				String[] parts = env.split(",");
 				for (int i = 0; i<parts.length; i++){
 					String b = parts[i].trim();
-					if (b.length()==0) {continue;}					if (!b.endsWith("/")) {b = b+"/";
+					if (b.length()==0) {continue;}					if (!b.startsWith("rmsp://")) {b = "rmsp://"+b;
+}					if (!b.endsWith("/UAL/")) {{
+						if (!b.endsWith("/")) {b = b+"/";
+}						b = b+"UAL/";
+					}
 }					theaterBases.add(b);
 				}
 				System.out.println("Coordinator: remote theaters = "+theaterBases.toString());
@@ -300,28 +304,49 @@ public class Coordinator extends UniversalActor  {
 
 		}
 		public salsa.naming.UAL pickWorkerUAL(String tag) {
-			if (theaterBases==null||theaterBases.size()==0) {			return null;
+			if (theaterBases==null||theaterBases.size()==0) {{
+				theaterBases = new java.util.ArrayList();
+				rr = 0;
+				String raw = java.lang.System.getProperty("WORKER_THEATERS", null);
+				if (raw==null||raw.trim().length()==0) {raw = java.lang.System.getenv("WORKER_THEATERS");
+}				System.out.println("DEBUG WORKER_THEATERS raw = "+raw);
+				if (raw!=null) {{
+					raw = raw.trim();
+					if (raw.length()>0) {{
+						String[] parts = raw.split(",");
+						for (int i = 0; i<parts.length; i++){
+							String b = parts[i].trim();
+							if (b.length()==0) {continue;}							if (!b.startsWith("rmsp://")) {b = "rmsp://"+b;
+}							if (!b.endsWith("/UAL/")) {{
+								if (!b.endsWith("/")) {b = b+"/";
+}								b = b+"UAL/";
+							}
+}							theaterBases.add(b);
+						}
+						System.out.println("Coordinator: remote theaters = "+theaterBases.toString());
+					}
+}				}
+}			}
+}			if (theaterBases==null||theaterBases.size()==0) {			return null;
 }			String base = (String)theaterBases.get(rr%theaterBases.size());
 			rr++;
 			lastWorkerId = tag+"-"+java.lang.System.currentTimeMillis()+"-"+rr;
 			return new salsa.naming.UAL(base+lastWorkerId);
 		}
 		public salsa.naming.UAN buildWorkerUAN() {
-			return new salsa.naming.UAN("uan://127.0.0.1:5050/"+lastWorkerId);
+			String host = java.lang.System.getProperty("NS_HOST");
+			if (host==null||host.length()==0) {host = java.lang.System.getenv("NS_HOST");
+}			if (host==null||host.length()==0) {host = "127.0.0.1";
+}			String port = java.lang.System.getProperty("NS_PORT");
+			if (port==null||port.length()==0) {port = java.lang.System.getenv("NS_PORT");
+}			if (port==null||port.length()==0) {port = "5050";
+}			return new salsa.naming.UAN("uan://"+host+":"+port+"/"+lastWorkerId);
 		}
 		public void computeClosest(java.util.ArrayList flights, salsa.naming.UAL replyUAL) {
 			this.replyRef = pa2.Main.getReferenceByLocation(replyUAL);
 			this.d1Best = java.lang.Double.POSITIVE_INFINITY;
 			this.d1Pairs = new java.util.ArrayList();
 			this.d1Received = 0;
-			{
-				// loadTheatersFromEnv()
-				{
-					Object _arguments[] = {  };
-					Message message = new Message( self, self, "loadTheatersFromEnv", _arguments, null, null );
-					__messages.add( message );
-				}
-			}
 			int n = flights.size();
 			if (n<2) {{
 				{
@@ -342,6 +367,7 @@ public class Coordinator extends UniversalActor  {
 				int iStart = w*chunk;
 				int iEnd = java.lang.Math.min(n-2, (w+1)*chunk-1);
 				if (iStart>=n-1) {break;}				salsa.naming.UAL ual = pickWorkerUAL("pair");
+				System.out.println("DEBUG pickWorkerUAL -> "+ual);
 				if (ual==null) {{
 					System.out.println("Coordinator: local PairWorker for range ["+iStart+".."+iEnd+"]");
 					PairWorker pw = ((PairWorker)new PairWorker(this).construct());
@@ -422,6 +448,7 @@ public class Coordinator extends UniversalActor  {
 				int iStart = w*chunk;
 				int iEnd = java.lang.Math.min(n-2, (w+1)*chunk-1);
 				if (iStart>=n-1) {break;}				salsa.naming.UAL ual = pickWorkerUAL("dcpa");
+				System.out.println("DEBUG pickWorkerUAL -> "+ual);
 				if (ual==null) {{
 					System.out.println("Coordinator: local DcpaWorker for range ["+iStart+".."+iEnd+"]");
 					DcpaWorker wk = ((DcpaWorker)new DcpaWorker(this).construct());
@@ -484,6 +511,7 @@ public class Coordinator extends UniversalActor  {
 				int iStart = w*chunk;
 				int iEnd = java.lang.Math.min(n-2, (w+1)*chunk-1);
 				if (iStart>=n-1) {break;}				salsa.naming.UAL ual = pickWorkerUAL("tcpa");
+				System.out.println("DEBUG pickWorkerUAL -> "+ual);
 				if (ual==null) {{
 					System.out.println("Coordinator: local TcpaWorker for range ["+iStart+".."+iEnd+"]");
 					TcpaWorker wk = ((TcpaWorker)new TcpaWorker(this).construct());

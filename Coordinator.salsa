@@ -25,7 +25,7 @@ behavior Coordinator {
   int t3Received;
 
   // ---- remote theaters ----
-  java.util.ArrayList theaterBases;   // ArrayList<String> of base UALs, e.g. rmsp://host:port/UAL/
+  java.util.ArrayList theaterBases;   // ArrayList<String>, e.g. rmsp://host:port/UAL/
   int rr;                             // round-robin index
   String lastWorkerId;                // for pairing UAN with UAL
 
@@ -48,7 +48,12 @@ behavior Coordinator {
       for (int i = 0; i < parts.length; i++) {
         String b = parts[i].trim();
         if (b.length() == 0) continue;
-        if (!b.endsWith("/")) b = b + "/";  // ensure trailing slash
+        if (!b.startsWith("rmsp://")) b = "rmsp://" + b;
+        // Ensure base ends with /UAL/
+        if (!b.endsWith("/UAL/")) {
+          if (!b.endsWith("/")) b = b + "/";
+          b = b + "UAL/";
+        }
         theaterBases.add(b);
       }
       System.out.println("Coordinator: remote theaters = " + theaterBases.toString());
@@ -57,17 +62,14 @@ behavior Coordinator {
     }
   }
 
-  // replace your current pickWorkerUAL with this fully self-contained version
+  // Lazy init path (also normalizes to /UAL/)
   salsa.naming.UAL pickWorkerUAL(String tag) {
-    // If we don't have a parsed list yet, build it now (idempotent).
     if (theaterBases == null || theaterBases.size() == 0) {
       theaterBases = new java.util.ArrayList();
       rr = 0;
 
       String raw = java.lang.System.getProperty("WORKER_THEATERS", null);
-      if (raw == null || raw.trim().length() == 0) {
-        raw = java.lang.System.getenv("WORKER_THEATERS");
-      }
+      if (raw == null || raw.trim().length() == 0) raw = java.lang.System.getenv("WORKER_THEATERS");
 
       System.out.println("DEBUG WORKER_THEATERS raw = " + raw);
       if (raw != null) {
@@ -78,7 +80,10 @@ behavior Coordinator {
             String b = parts[i].trim();
             if (b.length() == 0) continue;
             if (!b.startsWith("rmsp://")) b = "rmsp://" + b;
-            if (!b.endsWith("/")) b = b + "/";
+            if (!b.endsWith("/UAL/")) {
+              if (!b.endsWith("/")) b = b + "/";
+              b = b + "UAL/";
+            }
             theaterBases.add(b);
           }
           System.out.println("Coordinator: remote theaters = " + theaterBases.toString());
@@ -86,19 +91,25 @@ behavior Coordinator {
       }
     }
 
-    // If still empty, no remote theaters → spawn local.
     if (theaterBases == null || theaterBases.size() == 0) return null;
 
-    // Round-robin UAL
     String base = (String)theaterBases.get(rr % theaterBases.size());
     rr++;
     lastWorkerId = tag + "-" + java.lang.System.currentTimeMillis() + "-" + rr;
     return new salsa.naming.UAL(base + lastWorkerId);
   }
 
+  // Point to your naming server; allow override via NS_HOST / NS_PORT
   salsa.naming.UAN buildWorkerUAN() {
-    // use the same id we just generated in pickWorkerUAL(...)
-    return new salsa.naming.UAN("uan://127.0.1.1:5050/" + lastWorkerId);
+    String host = java.lang.System.getProperty("NS_HOST");
+    if (host == null || host.length() == 0) host = java.lang.System.getenv("NS_HOST");
+    if (host == null || host.length() == 0) host = "127.0.0.1";
+
+    String port = java.lang.System.getProperty("NS_PORT");
+    if (port == null || port.length() == 0) port = java.lang.System.getenv("NS_PORT");
+    if (port == null || port.length() == 0) port = "5050";
+
+    return new salsa.naming.UAN("uan://" + host + ":" + port + "/" + lastWorkerId);
   }
 
   // ===== d1 stage =====
@@ -225,7 +236,7 @@ behavior Coordinator {
 
       salsa.naming.UAL ual = pickWorkerUAL("tcpa");
       System.out.println("DEBUG pickWorkerUAL -> " + ual);
-      
+
       if (ual == null) {
         System.out.println("Coordinator: local TcpaWorker for range [" + iStart + ".." + iEnd + "]");
         TcpaWorker wk = new TcpaWorker();
