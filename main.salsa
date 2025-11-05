@@ -48,7 +48,7 @@ behavior Main {
   // prints earliest time (sec) and rows at that time
   void afterTcpa(double t3, java.util.ArrayList rows) {
     if (t3 == java.lang.Double.POSITIVE_INFINITY || rows.size()==0) {
-      // No pair satisfied DCPA ≤ 0.66 nmi
+      // No pair satisfied DCPA less than eq to 0.66 nmi
       System.out.println("NaN");
       return;
     }

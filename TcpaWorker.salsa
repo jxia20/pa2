@@ -26,7 +26,8 @@ behavior TcpaWorker {
     // Store the earliest time to CPA found so far
     double bestT = java.lang.Double.POSITIVE_INFINITY;
 
-    java.util.ArrayList rows = new java.util.ArrayList(); // strings: "id1 lat1 lon1 alt1 id2 lat2 lon2 alt2"
+    // strings: "id1 lat1 lon1 alt1 id2 lat2 lon2 alt2"
+    java.util.ArrayList rows = new java.util.ArrayList(); 
 
     int n = flights.size();
 
@@ -57,7 +58,6 @@ behavior TcpaWorker {
           t = - rv / vv;
           if (t < 0) t = 0;
         } else {
-          // Relative velocity zero: CPA is now
           t = 0;
         }
 
@@ -84,7 +84,7 @@ behavior TcpaWorker {
 
   // formatting showing flights position and altitutdes at time of closest approach
   String formatRowAtTime(Flight a, Flight b, double tsec) {
-    double distA = a.hsKnots/3600.0 * tsec;  // nmi
+    double distA = a.hsKnots/3600.0 * tsec; 
     double distB = b.hsKnots/3600.0 * tsec;
 
     double[] A = Kinematics.moveAlong(a.latDeg, a.lonDeg, a.trackDeg, distA);
