@@ -1,0 +1,14 @@
+module pa2;
+
+behavior SpawnTest {
+  void act(String[] args) {
+    long t = java.lang.System.currentTimeMillis();
+
+    // Use the exact host/port your theater printed
+    salsa.naming.UAL ual = new salsa.naming.UAL("rmsp://127.0.0.1:51001/UAL/test-" + t);
+    salsa.naming.UAN uan = new salsa.naming.UAN("uan://127.0.0.1:5050/test-" + t);
+
+    RemoteEcho r = new RemoteEcho() at (uan, ual);
+    r <- hello("world");
+  }
+}

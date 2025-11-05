@@ -31,10 +31,8 @@ import salsa.resources.ActorService;
 
 // End SALSA compiler generated import delcarations.
 
-import pa2.Flight;
-import pa2.Kinematics;
 
-public class TcpaWorker extends UniversalActor  {
+public class RemoteEcho extends UniversalActor  {
 	public static void main(String args[]) {
 		UAN uan = null;
 		UAL ual = null;
@@ -69,7 +67,7 @@ public class TcpaWorker extends UniversalActor  {
 			ual = new UAL( ServiceFactory.getTheater().getLocation() + System.getProperty("identifier"));
 		}
 		RunTime.receivedMessage();
-		TcpaWorker instance = (TcpaWorker)new TcpaWorker(uan, ual,null).construct();
+		RemoteEcho instance = (RemoteEcho)new RemoteEcho(uan, ual,null).construct();
 		gc.WeakReference instanceRef=new gc.WeakReference(uan,ual);
 		{
 			Object[] _arguments = { args };
@@ -82,18 +80,18 @@ public class TcpaWorker extends UniversalActor  {
 		RunTime.finishedProcessingMessage();
 	}
 
-	public static ActorReference getReferenceByName(UAN uan)	{ return new TcpaWorker(false, uan); }
-	public static ActorReference getReferenceByName(String uan)	{ return TcpaWorker.getReferenceByName(new UAN(uan)); }
-	public static ActorReference getReferenceByLocation(UAL ual)	{ return new TcpaWorker(false, ual); }
+	public static ActorReference getReferenceByName(UAN uan)	{ return new RemoteEcho(false, uan); }
+	public static ActorReference getReferenceByName(String uan)	{ return RemoteEcho.getReferenceByName(new UAN(uan)); }
+	public static ActorReference getReferenceByLocation(UAL ual)	{ return new RemoteEcho(false, ual); }
 
-	public static ActorReference getReferenceByLocation(String ual)	{ return TcpaWorker.getReferenceByLocation(new UAL(ual)); }
-	public TcpaWorker(boolean o, UAN __uan)	{ super(false,__uan); }
-	public TcpaWorker(boolean o, UAL __ual)	{ super(false,__ual); }
-	public TcpaWorker(UAN __uan,UniversalActor.State sourceActor)	{ this(__uan, null, sourceActor); }
-	public TcpaWorker(UAL __ual,UniversalActor.State sourceActor)	{ this(null, __ual, sourceActor); }
-	public TcpaWorker(UniversalActor.State sourceActor)		{ this(null, null, sourceActor);  }
-	public TcpaWorker()		{  }
-	public TcpaWorker(UAN __uan, UAL __ual, Object obj) {
+	public static ActorReference getReferenceByLocation(String ual)	{ return RemoteEcho.getReferenceByLocation(new UAL(ual)); }
+	public RemoteEcho(boolean o, UAN __uan)	{ super(false,__uan); }
+	public RemoteEcho(boolean o, UAL __ual)	{ super(false,__ual); }
+	public RemoteEcho(UAN __uan,UniversalActor.State sourceActor)	{ this(__uan, null, sourceActor); }
+	public RemoteEcho(UAL __ual,UniversalActor.State sourceActor)	{ this(null, __ual, sourceActor); }
+	public RemoteEcho(UniversalActor.State sourceActor)		{ this(null, null, sourceActor);  }
+	public RemoteEcho()		{  }
+	public RemoteEcho(UAN __uan, UAL __ual, Object obj) {
 		//decide the type of sourceActor
 		//if obj is null, the actor must be the startup actor.
 		//if obj is an actorReference, this actor is created by a remote actor
@@ -116,7 +114,7 @@ public class TcpaWorker extends UniversalActor  {
 			      setSource(sourceActor.getUAN(), sourceActor.getUAL());
 			      activateGC();
 			    }
-			    createRemotely(__uan, __ual, "pa2.TcpaWorker", sourceRef);
+			    createRemotely(__uan, __ual, "pa2.RemoteEcho", sourceRef);
 			  }
 
 			  // local creation
@@ -181,11 +179,11 @@ public class TcpaWorker extends UniversalActor  {
 	}
 
 	public class State extends UniversalActor .State {
-		public TcpaWorker self;
+		public RemoteEcho self;
 		public void updateSelf(ActorReference actorReference) {
-			((TcpaWorker)actorReference).setUAL(getUAL());
-			((TcpaWorker)actorReference).setUAN(getUAN());
-			self = new TcpaWorker(false,getUAL());
+			((RemoteEcho)actorReference).setUAL(getUAL());
+			((RemoteEcho)actorReference).setUAN(getUAN());
+			self = new RemoteEcho(false,getUAL());
 			self.setUAN(getUAN());
 			self.setUAL(getUAL());
 			self.activateGC();
@@ -197,7 +195,7 @@ public class TcpaWorker extends UniversalActor  {
 
 		public State(UAN __uan, UAL __ual) {
 			super(__uan, __ual);
-			addClassName( "pa2.TcpaWorker$State" );
+			addClassName( "pa2.RemoteEcho$State" );
 			addMethodsForClasses();
 		}
 
@@ -258,70 +256,8 @@ public class TcpaWorker extends UniversalActor  {
 			}
 		}
 
-		public void findSoonestTcpa(java.util.ArrayList flights, java.lang.Integer iStartObj, java.lang.Integer iEndObj, salsa.naming.UAL parentUAL) {
-			int iStart = iStartObj.intValue();
-			int iEnd = iEndObj.intValue();
-			System.out.println("TcpaWorker@"+this.getUAL()+" range ["+iStart+".."+iEnd+"]");
-			final double NMAC_NMI = 0.66;
-			double bestT = java.lang.Double.POSITIVE_INFINITY;
-			java.util.ArrayList rows = new java.util.ArrayList();
-			int n = flights.size();
-			for (int i = iStart; i<=iEnd&&i<n-1; i++){
-				Flight a = (Flight)flights.get(i);
-				for (int j = i+1; j<n; j++){
-					Flight b = (Flight)flights.get(j);
-					double[] dEN = Kinematics.deltaEN_Nmi(a.latDeg, a.lonDeg, b.latDeg, b.lonDeg);
-					double dE0 = dEN[0], dN0 = dEN[1];
-					double dZ0 = Kinematics.feetToNmi(b.altFt-a.altFt);
-					double[] vA = Kinematics.velocityEN_NmiPerSec(a.trackDeg, a.hsKnots);
-					double[] vB = Kinematics.velocityEN_NmiPerSec(b.trackDeg, b.hsKnots);
-					double vE = vB[0]-vA[0];
-					double vN = vB[1]-vA[1];
-					double vZ = Kinematics.feetToNmi((b.vsFpm-a.vsFpm)/60.0);
-					double rv = dE0*vE+dN0*vN+dZ0*vZ;
-					double vv = vE*vE+vN*vN+vZ*vZ;
-					double t = 0.0;
-					if (vv>0) {{
-						t = -rv/vv;
-						if (t<0) {t = 0;
-}					}
-}					else {{
-						t = 0;
-					}
-}					double dE = dE0+vE*t;
-					double dN = dN0+vN*t;
-					double dZ = dZ0+vZ*t;
-					double dcpa = java.lang.Math.sqrt(dE*dE+dN*dN+dZ*dZ);
-					if (dcpa<=NMAC_NMI+1e-9) {{
-						if (t<bestT-1e-9) {{
-							bestT = t;
-							rows.clear();
-							rows.add(formatRowAtTime(a, b, t));
-						}
-}						else {if (java.lang.Math.abs(t-bestT)<=1e-9) {{
-							rows.add(formatRowAtTime(a, b, t));
-						}
-}}					}
-}				}
-			}
-			salsa.language.ActorReference parent = pa2.Coordinator.getReferenceByLocation(parentUAL);
-			{
-				// parent<-reportTcpa(bestT, rows)
-				{
-					Object _arguments[] = { bestT, rows };
-					Message message = new Message( self, parent, "reportTcpa", _arguments, null, null );
-					__messages.add( message );
-				}
-			}
-		}
-		public String formatRowAtTime(Flight a, Flight b, double tsec) {
-			double distA = a.hsKnots/3600.0*tsec;
-			double distB = b.hsKnots/3600.0*tsec;
-			double[] A = Kinematics.moveAlong(a.latDeg, a.lonDeg, a.trackDeg, distA);
-			double[] B = Kinematics.moveAlong(b.latDeg, b.lonDeg, b.trackDeg, distB);
-			double altA = a.altFt+a.vsFpm*(tsec/60.0);
-			double altB = b.altFt+b.vsFpm*(tsec/60.0);
-			return a.id+" "+String.format(java.util.Locale.US, "%.6f %.6f %.0f ", A[0], A[1], altA)+b.id+" "+String.format(java.util.Locale.US, "%.6f %.6f %.0f", B[0], B[1], altB);
+		public void hello(String who) {
+			System.out.println("RemoteEcho@"+this.getUAL()+" says hi to "+who);
 		}
 	}
 }

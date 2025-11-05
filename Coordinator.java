@@ -272,25 +272,30 @@ public class Coordinator extends UniversalActor  {
 		int t3Received;
 		java.util.ArrayList theaterBases;
 		int rr;
+		String lastWorkerId;
 		public void loadTheatersFromEnv() {
 			theaterBases = new java.util.ArrayList();
 			rr = 0;
 			try {
 				String env = java.lang.System.getenv("WORKER_THEATERS");
-				if (env==null) {				return;
+				if (env==null||env.trim().length()==0) {{
+					env = java.lang.System.getProperty("WORKER_THEATERS", "");
+				}
 }				env = env.trim();
-				if (env.length()==0) {				return;
+				if (env.length()==0) {{
+					System.out.println("Coordinator: no remote theaters configured; running locally.");
+					return;
+				}
 }				String[] parts = env.split(",");
 				for (int i = 0; i<parts.length; i++){
 					String b = parts[i].trim();
-					if (b.length()==0) {continue;}					if (!b.endsWith("/UAL/")) {{
-						if (!b.endsWith("/")) {b = b+"/";
-}						b = b+"UAL/";
-					}
+					if (b.length()==0) {continue;}					if (!b.endsWith("/")) {b = b+"/";
 }					theaterBases.add(b);
 				}
+				System.out.println("Coordinator: remote theaters = "+theaterBases.toString());
 			}
 			catch (Exception __e) {
+				System.out.println("Coordinator: failed to read WORKER_THEATERS; running locally.");
 			}
 
 		}
@@ -298,8 +303,11 @@ public class Coordinator extends UniversalActor  {
 			if (theaterBases==null||theaterBases.size()==0) {			return null;
 }			String base = (String)theaterBases.get(rr%theaterBases.size());
 			rr++;
-			String id = tag+"-"+java.lang.System.currentTimeMillis()+"-"+rr;
-			return new salsa.naming.UAL(base+id);
+			lastWorkerId = tag+"-"+java.lang.System.currentTimeMillis()+"-"+rr;
+			return new salsa.naming.UAL(base+lastWorkerId);
+		}
+		public salsa.naming.UAN buildWorkerUAN() {
+			return new salsa.naming.UAN("uan://127.0.0.1:5050/"+lastWorkerId);
 		}
 		public void computeClosest(java.util.ArrayList flights, salsa.naming.UAL replyUAL) {
 			this.replyRef = pa2.Main.getReferenceByLocation(replyUAL);
@@ -335,6 +343,7 @@ public class Coordinator extends UniversalActor  {
 				int iEnd = java.lang.Math.min(n-2, (w+1)*chunk-1);
 				if (iStart>=n-1) {break;}				salsa.naming.UAL ual = pickWorkerUAL("pair");
 				if (ual==null) {{
+					System.out.println("Coordinator: local PairWorker for range ["+iStart+".."+iEnd+"]");
 					PairWorker pw = ((PairWorker)new PairWorker(this).construct());
 					d1Expected++;
 					{
@@ -347,7 +356,9 @@ public class Coordinator extends UniversalActor  {
 					}
 				}
 }				else {{
-					ActorReference pw = pa2.PairWorker.getReferenceByLocation(ual);
+					salsa.naming.UAN uan = buildWorkerUAN();
+					System.out.println("Coordinator: spawn PairWorker UAN="+uan+" UAL="+ual+" range ["+iStart+".."+iEnd+"]");
+					PairWorker pw = ((PairWorker)new PairWorker(uan, ual,this).construct());
 					d1Expected++;
 					{
 						// pw<-findMinPairs(flights, iStart, iEnd, this.getUAL())
@@ -412,6 +423,7 @@ public class Coordinator extends UniversalActor  {
 				int iEnd = java.lang.Math.min(n-2, (w+1)*chunk-1);
 				if (iStart>=n-1) {break;}				salsa.naming.UAL ual = pickWorkerUAL("dcpa");
 				if (ual==null) {{
+					System.out.println("Coordinator: local DcpaWorker for range ["+iStart+".."+iEnd+"]");
 					DcpaWorker wk = ((DcpaWorker)new DcpaWorker(this).construct());
 					d2Expected++;
 					{
@@ -424,7 +436,9 @@ public class Coordinator extends UniversalActor  {
 					}
 				}
 }				else {{
-					ActorReference wk = pa2.DcpaWorker.getReferenceByLocation(ual);
+					salsa.naming.UAN uan = buildWorkerUAN();
+					System.out.println("Coordinator: spawn DcpaWorker UAN="+uan+" UAL="+ual+" range ["+iStart+".."+iEnd+"]");
+					DcpaWorker wk = ((DcpaWorker)new DcpaWorker(uan, ual,this).construct());
 					d2Expected++;
 					{
 						// wk<-findMinDcpa(flights, iStart, iEnd, this.getUAL())
@@ -471,6 +485,7 @@ public class Coordinator extends UniversalActor  {
 				int iEnd = java.lang.Math.min(n-2, (w+1)*chunk-1);
 				if (iStart>=n-1) {break;}				salsa.naming.UAL ual = pickWorkerUAL("tcpa");
 				if (ual==null) {{
+					System.out.println("Coordinator: local TcpaWorker for range ["+iStart+".."+iEnd+"]");
 					TcpaWorker wk = ((TcpaWorker)new TcpaWorker(this).construct());
 					t3Expected++;
 					{
@@ -483,7 +498,9 @@ public class Coordinator extends UniversalActor  {
 					}
 				}
 }				else {{
-					ActorReference wk = pa2.TcpaWorker.getReferenceByLocation(ual);
+					salsa.naming.UAN uan = buildWorkerUAN();
+					System.out.println("Coordinator: spawn TcpaWorker UAN="+uan+" UAL="+ual+" range ["+iStart+".."+iEnd+"]");
+					TcpaWorker wk = ((TcpaWorker)new TcpaWorker(uan, ual,this).construct());
 					t3Expected++;
 					{
 						// wk<-findSoonestTcpa(flights, iStart, iEnd, this.getUAL())

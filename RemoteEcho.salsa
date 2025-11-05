@@ -1,0 +1,7 @@
+module pa2;
+
+behavior RemoteEcho {
+  void hello(String who) {
+    System.out.println("RemoteEcho@" + this.getUAL() + " says hi to " + who);
+  }
+}

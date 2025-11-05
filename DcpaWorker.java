@@ -261,6 +261,7 @@ public class DcpaWorker extends UniversalActor  {
 		public void findMinDcpa(java.util.ArrayList flights, java.lang.Integer iStartObj, java.lang.Integer iEndObj, salsa.naming.UAL parentUAL) {
 			int iStart = iStartObj.intValue();
 			int iEnd = iEndObj.intValue();
+			System.out.println("DcpaWorker@"+this.getUAL()+" range ["+iStart+".."+iEnd+"]");
 			double best = java.lang.Double.POSITIVE_INFINITY;
 			java.util.ArrayList rows = new java.util.ArrayList();
 			int n = flights.size();

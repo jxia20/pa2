@@ -13,6 +13,8 @@ behavior DcpaWorker {
     int iStart = iStartObj.intValue();
     int iEnd   = iEndObj.intValue();
 
+    System.out.println("DcpaWorker@" + this.getUAL() + " range [" + iStart + ".." + iEnd + "]");
+
     double best = java.lang.Double.POSITIVE_INFINITY;
     java.util.ArrayList rows = new java.util.ArrayList();  // strings "id1 lat1 lon1 alt1 id2 lat2 lon2 alt2"
 

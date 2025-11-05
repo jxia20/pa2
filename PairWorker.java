@@ -261,6 +261,7 @@ public class PairWorker extends UniversalActor  {
 		public void findMinPairs(java.util.ArrayList flights, java.lang.Integer iStartObj, java.lang.Integer iEndObj, salsa.naming.UAL parentUAL) {
 			int iStart = iStartObj.intValue();
 			int iEnd = iEndObj.intValue();
+			System.out.println("PairWorker@"+this.getUAL()+" range ["+iStart+".."+iEnd+"]");
 			double best = java.lang.Double.POSITIVE_INFINITY;
 			java.util.ArrayList pairs = new java.util.ArrayList();
 			int n = flights.size();

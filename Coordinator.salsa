@@ -24,9 +24,10 @@ behavior Coordinator {
   int t3Expected;
   int t3Received;
 
-  // ---- remote theaters (optional) ----
-  java.util.ArrayList theaterBases;   // ArrayList<String> of base UALs: rmsp://host:port/UAL/
+  // ---- remote theaters ----
+  java.util.ArrayList theaterBases;   // ArrayList<String> of base UALs, e.g. rmsp://host:port/UAL/
   int rr;                             // round-robin index
+  String lastWorkerId;                // for pairing UAN with UAL
 
   // ===== helpers =====
   void loadTheatersFromEnv() {
@@ -34,32 +35,41 @@ behavior Coordinator {
     rr = 0;
     try {
       String env = java.lang.System.getenv("WORKER_THEATERS");
-      if (env == null) return;
+      if (env == null || env.trim().length() == 0) {
+        env = java.lang.System.getProperty("WORKER_THEATERS", "");
+      }
       env = env.trim();
-      if (env.length() == 0) return;
+      if (env.length() == 0) {
+        System.out.println("Coordinator: no remote theaters configured; running locally.");
+        return;
+      }
       String[] parts = env.split(",");
-      for (int i=0;i<parts.length;i++) {
+      for (int i = 0; i < parts.length; i++) {
         String b = parts[i].trim();
-        if (b.length()==0) continue;
-        // ensure it ends with /UAL/
-        if (!b.endsWith("/UAL/")) {
-          if (!b.endsWith("/")) b = b + "/";
-          b = b + "UAL/";
-        }
+        if (b.length() == 0) continue;
+        // keep exactly what user gave; just ensure trailing slash
+        if (!b.endsWith("/")) b = b + "/";
         theaterBases.add(b);
       }
+      System.out.println("Coordinator: remote theaters = " + theaterBases.toString());
     } catch (Exception __e) {
-      // ignore; fallback to local workers
+      System.out.println("Coordinator: failed to read WORKER_THEATERS; running locally.");
     }
   }
 
+  // round-robin UAL builder; also remembers the id so we can make a matching UAN
   salsa.naming.UAL pickWorkerUAL(String tag) {
-    if (theaterBases==null || theaterBases.size()==0) return null;
+    if (theaterBases == null || theaterBases.size() == 0) return null;
     String base = (String)theaterBases.get(rr % theaterBases.size());
     rr++;
-    // unique id per worker
-    String id = tag + "-" + java.lang.System.currentTimeMillis() + "-" + rr;
-    return new salsa.naming.UAL(base + id);
+    lastWorkerId = tag + "-" + java.lang.System.currentTimeMillis() + "-" + rr;
+    // base already ends with "/"
+    return new salsa.naming.UAL(base + lastWorkerId);
+  }
+
+  // builds a UAN pointing to your naming server (run WWCNamingServer on -p 5050)
+  salsa.naming.UAN buildWorkerUAN() {
+    return new salsa.naming.UAN("uan://127.0.0.1:5050/" + lastWorkerId);
   }
 
   // ===== d1 stage =====
@@ -86,13 +96,15 @@ behavior Coordinator {
 
       salsa.naming.UAL ual = pickWorkerUAL("pair");
       if (ual == null) {
-        // local
+        System.out.println("Coordinator: local PairWorker for range [" + iStart + ".." + iEnd + "]");
         PairWorker pw = new PairWorker();
         d1Expected++;
         pw <- findMinPairs(flights, iStart, iEnd, this.getUAL());
       } else {
-        // remote
-        ActorReference pw = pa2.PairWorker.getReferenceByLocation(ual);
+        salsa.naming.UAN uan = buildWorkerUAN();
+        System.out.println("Coordinator: spawn PairWorker UAN=" + uan + " UAL=" + ual +
+                           " range [" + iStart + ".." + iEnd + "]");
+        PairWorker pw = new PairWorker() at (uan, ual);
         d1Expected++;
         pw <- findMinPairs(flights, iStart, iEnd, this.getUAL());
       }
@@ -121,8 +133,6 @@ behavior Coordinator {
     this.d2Rows = new java.util.ArrayList();
     this.d2Received = 0;
 
-    // reuse loaded theaters
-
     int n = flights.size();
     if (n < 2) { replyRef <- afterDcpa(java.lang.Double.NaN, d2Rows); return; }
 
@@ -138,11 +148,15 @@ behavior Coordinator {
 
       salsa.naming.UAL ual = pickWorkerUAL("dcpa");
       if (ual == null) {
+        System.out.println("Coordinator: local DcpaWorker for range [" + iStart + ".." + iEnd + "]");
         DcpaWorker wk = new DcpaWorker();
         d2Expected++;
         wk <- findMinDcpa(flights, iStart, iEnd, this.getUAL());
       } else {
-        ActorReference wk = pa2.DcpaWorker.getReferenceByLocation(ual);
+        salsa.naming.UAN uan = buildWorkerUAN();
+        System.out.println("Coordinator: spawn DcpaWorker UAN=" + uan + " UAL=" + ual +
+                           " range [" + iStart + ".." + iEnd + "]");
+        DcpaWorker wk = new DcpaWorker() at (uan, ual);
         d2Expected++;
         wk <- findMinDcpa(flights, iStart, iEnd, this.getUAL());
       }
@@ -180,11 +194,15 @@ behavior Coordinator {
 
       salsa.naming.UAL ual = pickWorkerUAL("tcpa");
       if (ual == null) {
+        System.out.println("Coordinator: local TcpaWorker for range [" + iStart + ".." + iEnd + "]");
         TcpaWorker wk = new TcpaWorker();
         t3Expected++;
         wk <- findSoonestTcpa(flights, iStart, iEnd, this.getUAL());
       } else {
-        ActorReference wk = pa2.TcpaWorker.getReferenceByLocation(ual);
+        salsa.naming.UAN uan = buildWorkerUAN();
+        System.out.println("Coordinator: spawn TcpaWorker UAN=" + uan + " UAL=" + ual +
+                           " range [" + iStart + ".." + iEnd + "]");
+        TcpaWorker wk = new TcpaWorker() at (uan, ual);
         t3Expected++;
         wk <- findSoonestTcpa(flights, iStart, iEnd, this.getUAL());
       }

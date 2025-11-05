@@ -1,7 +1,7 @@
 package pa2;
 
 public class Kinematics {
-    private static final double R_NMI = 3440.065;   // Earth radius in nautical miles
+    private static final double R_NMI = 3440.065;
     private static final double FT_PER_NMI = 6076.12;
 
     private static double toRad(double deg){ return deg * Math.PI / 180.0; }
@@ -12,7 +12,7 @@ public class Kinematics {
 
     // Horizontal components (East, North) in nmi/s from track (0=N, 90=E) and speed in knots
     public static double[] velocityEN_NmiPerSec(double trackDeg, double hsKnots){
-        double sp = hsKnots / 3600.0;            // nmi/s
+        double sp = hsKnots / 3600.0;
         double th = toRad(trackDeg);
         double vn = sp * Math.cos(th);
         double ve = sp * Math.sin(th);

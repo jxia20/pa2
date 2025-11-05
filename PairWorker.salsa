@@ -13,6 +13,8 @@ behavior PairWorker {
     int iStart = iStartObj.intValue();
     int iEnd   = iEndObj.intValue();
 
+    System.out.println("PairWorker@" + this.getUAL() + " range [" + iStart + ".." + iEnd + "]");
+
     double best = java.lang.Double.POSITIVE_INFINITY;
     java.util.ArrayList pairs = new java.util.ArrayList();
     int n = flights.size();
