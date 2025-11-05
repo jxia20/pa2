@@ -1,5 +1,6 @@
 module pa2;
 
+// sends message verifying message is sent and recieved (actor testing)
 behavior RemoteEcho {
   void hello(String who) {
     System.out.println("RemoteEcho@" + this.getUAL() + " says hi to " + who);

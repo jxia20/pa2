@@ -3,8 +3,13 @@ module pa2;
 import pa2.Flight;
 import pa2.Kinematics;
 
+/*
+The TcpaWorker actor computes the Time to Closest Point of Approach 
+between pairs of flights. Multiple TcpaWorker actors can run concurrently.
+*/
 behavior TcpaWorker {
 
+  // finds pair of flights within range that will reach the closest distance
   void findSoonestTcpa(java.util.ArrayList flights,
                        java.lang.Integer iStartObj,
                        java.lang.Integer iEndObj,
@@ -14,29 +19,36 @@ behavior TcpaWorker {
     int iEnd   = iEndObj.intValue();
 
     System.out.println("TcpaWorker@" + this.getUAL() + " range [" + iStart + ".." + iEnd + "]");
-
+    
+    // Threshold for a Near Mid Air Collision
     final double NMAC_NMI = 0.66;
+
+    // Store the earliest time to CPA found so far
     double bestT = java.lang.Double.POSITIVE_INFINITY;
+
     java.util.ArrayList rows = new java.util.ArrayList(); // strings: "id1 lat1 lon1 alt1 id2 lat2 lon2 alt2"
 
     int n = flights.size();
+
+    // Compare each unique flight pair
     for (int i = iStart; i <= iEnd && i < n-1; i++) {
       Flight a = (Flight) flights.get(i);
       for (int j = i+1; j < n; j++) {
         Flight b = (Flight) flights.get(j);
 
-        // Relative position (nmi) in local EN frame at t=0
+        // Compute relative position (nmi) in EN frame at t=0
         double[] dEN = Kinematics.deltaEN_Nmi(a.latDeg, a.lonDeg, b.latDeg, b.lonDeg);
         double dE0 = dEN[0], dN0 = dEN[1];
         double dZ0 = Kinematics.feetToNmi(b.altFt - a.altFt);
 
-        // Relative velocity (nmi/s)
+        // Compute relative velocity (nmi/s)
         double[] vA = Kinematics.velocityEN_NmiPerSec(a.trackDeg, a.hsKnots);
         double[] vB = Kinematics.velocityEN_NmiPerSec(b.trackDeg, b.hsKnots);
         double vE = vB[0] - vA[0];
         double vN = vB[1] - vA[1];
         double vZ = Kinematics.feetToNmi((b.vsFpm - a.vsFpm) / 60.0);
 
+        // Compute relative motion
         double rv = dE0*vE + dN0*vN + dZ0*vZ;
         double vv = vE*vE + vN*vN + vZ*vZ;
 
@@ -55,6 +67,7 @@ behavior TcpaWorker {
         double dZ = dZ0 + vZ*t;
         double dcpa = java.lang.Math.sqrt(dE*dE + dN*dN + dZ*dZ);
 
+        // if the distance is below or equal to the threshold, record it
         if (dcpa <= NMAC_NMI + 1e-9) {
           if (t < bestT - 1e-9) {
             bestT = t; rows.clear(); rows.add(formatRowAtTime(a, b, t));
@@ -69,6 +82,7 @@ behavior TcpaWorker {
     parent <- reportTcpa(bestT, rows);
   }
 
+  // formatting showing flights position and altitutdes at time of closest approach
   String formatRowAtTime(Flight a, Flight b, double tsec) {
     double distA = a.hsKnots/3600.0 * tsec;  // nmi
     double distB = b.hsKnots/3600.0 * tsec;

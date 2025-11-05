@@ -1,14 +1,20 @@
 module pa2;
 
 import pa2.Flight;
-import salsa.language.ActorReference;   // add this
+import salsa.language.ActorReference;
 
+/*
+ReaderActor is responsible for reading and parsing flight data from a text or CSV file.
+After reading the entire file, it sends the resulting list of flights back to the actor.
+*/
 behavior ReaderActor {
 
+  // reads the flight records
   void readAll(String path, salsa.naming.UAL replyUAL) {
     java.util.LinkedHashMap map = new java.util.LinkedHashMap();
 
     try {
+      // open file 
       java.io.BufferedReader br = new java.io.BufferedReader(new java.io.FileReader(path));
       while (true) {
         String line = br.readLine();
@@ -26,6 +32,7 @@ behavior ReaderActor {
         for (int i=0; i<7; i++){ fields[i]=fields[i].trim(); if (fields[i].length()==0){bad=true;break;} }
         if (bad) continue;
 
+        // parse each column
         String id = fields[0];
         try {
           double lat  = Double.parseDouble(fields[1]);
@@ -55,6 +62,7 @@ behavior ReaderActor {
     mainRef <- afterRead(list);
   }
 
+  // helper function for case
   boolean startsWithIgnoreCase(String s, String prefix) {
     return s.regionMatches(true, 0, prefix, 0, prefix.length());
   }

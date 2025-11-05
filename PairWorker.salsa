@@ -3,8 +3,13 @@ module pa2;
 import pa2.Flight;
 import pa2.Geo;
 
+/*
+PairWorker is an actor responsible for computing the closest pairs of flights.
+It runs in parallel with other PairWorker actors.
+*/
 behavior PairWorker {
-
+  
+  // finds minimum distance flight pairs within a given index range of the flight list
   void findMinPairs(java.util.ArrayList flights,
                     java.lang.Integer iStartObj,
                     java.lang.Integer iEndObj,
@@ -16,9 +21,10 @@ behavior PairWorker {
     System.out.println("PairWorker@" + this.getUAL() + " range [" + iStart + ".." + iEnd + "]");
 
     double best = java.lang.Double.POSITIVE_INFINITY;
-    java.util.ArrayList pairs = new java.util.ArrayList();
+    java.util.ArrayList pairs = new java.util.ArrayList(); // holds flight ids
     int n = flights.size();
 
+    // compare every pair of flights in the assigned range
     for (int i = iStart; i <= iEnd && i < n-1; i++) {
       Flight fi = (Flight) flights.get(i);
       for (int j = i+1; j < n; j++) {

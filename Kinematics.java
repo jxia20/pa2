@@ -1,8 +1,13 @@
 package pa2;
 
+/*
+The class provides functions for aircraft motion. It includes coordinate conversions, 
+velocity decomposition, and position updates. All distances are calculated in 
+nautical miles (nmi), and angles in degrees.
+*/
 public class Kinematics {
-    private static final double R_NMI = 3440.065;
-    private static final double FT_PER_NMI = 6076.12;
+    private static final double R_NMI = 3440.065; // radius of earth
+    private static final double FT_PER_NMI = 6076.12; // ft to nmi
 
     private static double toRad(double deg){ return deg * Math.PI / 180.0; }
     private static double toDeg(double rad){ return rad * 180.0 / Math.PI; }
@@ -10,7 +15,7 @@ public class Kinematics {
     public static double feetToNmi(double ft){ return ft / FT_PER_NMI; }
     public static double nmiToFeet(double nmi){ return nmi * FT_PER_NMI; }
 
-    // Horizontal components (East, North) in nmi/s from track (0=N, 90=E) and speed in knots
+    // Computes horizontal components (East, North) in nmi/s from track angle (0=N, 90=E) and horizontal speed in knots
     public static double[] velocityEN_NmiPerSec(double trackDeg, double hsKnots){
         double sp = hsKnots / 3600.0;
         double th = toRad(trackDeg);
@@ -19,7 +24,7 @@ public class Kinematics {
         return new double[]{ve, vn};
     }
 
-    // Small-angle plane at lat0: Δnorth ≈ 60 nmi/deg, Δeast ≈ 60*cos(lat0) nmi/deg
+    // Computes changes in position between two points: Δnorth ≈ 60 nmi/deg, Δeast ≈ 60*cos(lat0) nmi/deg
     public static double[] deltaEN_Nmi(double lat1, double lon1, double lat2, double lon2){
         double lat0 = Math.toRadians((lat1 + lat2) * 0.5);
         double dN = (lat2 - lat1) * 60.0;
@@ -27,7 +32,7 @@ public class Kinematics {
         return new double[]{dE, dN};
     }
 
-    // Move (lat,lon) along track by distance (nmi), great-circle destination formula.
+    // Move (lat,lon) along track by distance (nmi) using the great-circle destination formula.
     public static double[] moveAlong(double latDeg, double lonDeg, double trackDeg, double distNmi){
         double phi1 = toRad(latDeg);
         double lam1 = toRad(lonDeg);
@@ -44,7 +49,7 @@ public class Kinematics {
         double x = cosDR - sinPhi1 * sinPhi2;
         double lam2 = lam1 + Math.atan2(y, x);
 
-        // Normalize lon to [-180, 180]
+        // Normalize
         double lon2 = (toDeg(lam2) + 540.0) % 360.0 - 180.0;
         return new double[]{toDeg(phi2), lon2};
     }

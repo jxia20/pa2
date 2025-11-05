@@ -3,8 +3,10 @@ module pa2;
 import pa2.Flight;
 import pa2.Kinematics;
 
+// DcpaWorker computes the minimum 3D Distance at Closest Point of Approach.
 behavior DcpaWorker {
 
+  // finds smallest DCPA and records the flights that achieve it
   void findMinDcpa(java.util.ArrayList flights,
                    java.lang.Integer iStartObj,
                    java.lang.Integer iEndObj,
@@ -15,8 +17,11 @@ behavior DcpaWorker {
 
     System.out.println("DcpaWorker@" + this.getUAL() + " range [" + iStart + ".." + iEnd + "]");
 
+    // current best DCPA
     double best = java.lang.Double.POSITIVE_INFINITY;
-    java.util.ArrayList rows = new java.util.ArrayList();  // strings "id1 lat1 lon1 alt1 id2 lat2 lon2 alt2"
+
+    // strings "id1 lat1 lon1 alt1 id2 lat2 lon2 alt2"
+    java.util.ArrayList rows = new java.util.ArrayList();  
 
     int n = flights.size();
     for (int i = iStart; i <= iEnd && i < n-1; i++) {
@@ -24,18 +29,19 @@ behavior DcpaWorker {
       for (int j = i+1; j < n; j++) {
         Flight b = (Flight) flights.get(j);
 
-        // Relative position in local ENU (nmi)
+        // Compute relative position in local ENU (nmi)
         double[] dEN = Kinematics.deltaEN_Nmi(a.latDeg, a.lonDeg, b.latDeg, b.lonDeg);
         double dE0 = dEN[0], dN0 = dEN[1];
         double dZ0 = Kinematics.feetToNmi(b.altFt - a.altFt);
 
-        // Relative velocity (nmi/s)
+        // Compute relative velocity (nmi/s)
         double[] vA = Kinematics.velocityEN_NmiPerSec(a.trackDeg, a.hsKnots);
         double[] vB = Kinematics.velocityEN_NmiPerSec(b.trackDeg, b.hsKnots);
         double vE = vB[0] - vA[0];
         double vN = vB[1] - vA[1];
         double vZ = Kinematics.feetToNmi((b.vsFpm - a.vsFpm) / 60.0); // ft/s -> nmi/s
 
+        // time to CPA
         double rv = dE0*vE + dN0*vN + dZ0*vZ;
         double vv = vE*vE + vN*vN + vZ*vZ;
 
@@ -65,6 +71,7 @@ behavior DcpaWorker {
     parent <- reportDcpa(best, rows);
   }
 
+  // Format both flights’ positions at time t
   String formatRowAtTime(Flight a, Flight b, double tsec) {
     double distA = a.hsKnots/3600.0 * tsec;  // nmi
     double distB = b.hsKnots/3600.0 * tsec;
@@ -75,7 +82,6 @@ behavior DcpaWorker {
     double altA = a.altFt + a.vsFpm*(tsec/60.0);
     double altB = b.altFt + b.vsFpm*(tsec/60.0);
 
-    // Format with US locale and 6 decimals for lat/lon; altitude rounded to nearest ft
     return a.id + " "
          + String.format(java.util.Locale.US, "%.6f %.6f %.0f ", A[0], A[1], altA)
          + b.id + " "

@@ -2,35 +2,41 @@ module pa2;
 
 import salsa.language.ActorReference;
 
+/*
+Coordinator controls all worker actors. Together they compute the closest distance now,
+the minimum Distance at Closest Point of Approach,
+and the earliest Time to Closest Point of Approach.
+*/
 behavior Coordinator {
 
   ActorReference replyRef;
 
-  // ---- d1 (closest distance now) ----
+  // current closest pair
   double d1Best;
   java.util.ArrayList d1Pairs;
   int d1Expected;
   int d1Received;
 
-  // ---- d2 (minimum DCPA) ----
+  // minimum DCPA
   double d2Best;
   java.util.ArrayList d2Rows;
   int d2Expected;
   int d2Received;
 
-  // ---- t3 (soonest TCPA among pairs with DCPA ≤ 0.66 nmi) ----
+  // earliest TCPA
   double t3Best;
   java.util.ArrayList t3Rows;
   int t3Expected;
   int t3Received;
 
-  // ---- remote theaters ----
-  java.util.ArrayList theaterBases;   // ArrayList<String>, e.g. rmsp://host:port/UAL/
-  int rr;                             // round-robin index
-  String lastWorkerId;                // for pairing UAN with UAL
+  // remote theater
+  java.util.ArrayList theaterBases;  
+  int rr;                            
+  String lastWorkerId;              
 
-  // ===== helpers =====
+  // helper functions
 
+  // load theaters
   void loadTheatersFromEnv() {
     theaterBases = new java.util.ArrayList();
     rr = 0;
@@ -62,7 +68,7 @@ behavior Coordinator {
     }
   }
 
-  // Lazy init path (also normalizes to /UAL/)
+  // choose a worker UAL from the list
   salsa.naming.UAL pickWorkerUAL(String tag) {
     if (theaterBases == null || theaterBases.size() == 0) {
       theaterBases = new java.util.ArrayList();
@@ -71,7 +77,6 @@ behavior Coordinator {
       String raw = java.lang.System.getProperty("WORKER_THEATERS", null);
       if (raw == null || raw.trim().length() == 0) raw = java.lang.System.getenv("WORKER_THEATERS");
 
-      System.out.println("DEBUG WORKER_THEATERS raw = " + raw);
       if (raw != null) {
         raw = raw.trim();
         if (raw.length() > 0) {
@@ -99,7 +104,7 @@ behavior Coordinator {
     return new salsa.naming.UAL(base + lastWorkerId);
   }
 
-  // Point to your naming server; allow override via NS_HOST / NS_PORT
+  // Builds a UAN pointing to the naming server
   salsa.naming.UAN buildWorkerUAN() {
     String host = java.lang.System.getProperty("NS_HOST");
     if (host == null || host.length() == 0) host = java.lang.System.getenv("NS_HOST");
@@ -112,7 +117,7 @@ behavior Coordinator {
     return new salsa.naming.UAN("uan://" + host + ":" + port + "/" + lastWorkerId);
   }
 
-  // ===== d1 stage =====
+  // current minimal pairwise distance
   void computeClosest(java.util.ArrayList flights, salsa.naming.UAL replyUAL) {
     this.replyRef = pa2.Main.getReferenceByLocation(replyUAL);
     this.d1Best = java.lang.Double.POSITIVE_INFINITY;
@@ -133,7 +138,6 @@ behavior Coordinator {
       if (iStart >= n - 1) break;
 
       salsa.naming.UAL ual = pickWorkerUAL("pair");
-      System.out.println("DEBUG pickWorkerUAL -> " + ual);
 
       if (ual == null) {
         System.out.println("Coordinator: local PairWorker for range [" + iStart + ".." + iEnd + "]");
@@ -166,7 +170,7 @@ behavior Coordinator {
     if (d1Received == d1Expected) replyRef <- afterClosest(d1Best, d1Pairs);
   }
 
-  // ===== d2 stage =====
+  // minimum 3D distance at CPA
   void computeDcpa(java.util.ArrayList flights, salsa.naming.UAL replyUAL) {
     this.replyRef = pa2.Main.getReferenceByLocation(replyUAL);
     this.d2Best = java.lang.Double.POSITIVE_INFINITY;
@@ -187,7 +191,6 @@ behavior Coordinator {
       if (iStart >= n - 1) break;
 
       salsa.naming.UAL ual = pickWorkerUAL("dcpa");
-      System.out.println("DEBUG pickWorkerUAL -> " + ual);
 
       if (ual == null) {
         System.out.println("Coordinator: local DcpaWorker for range [" + iStart + ".." + iEnd + "]");
@@ -216,7 +219,7 @@ behavior Coordinator {
     if (d2Received == d2Expected) replyRef <- afterDcpa(d2Best, d2Rows);
   }
 
-  // ===== t3 stage =====
+  // earliest potential NMAC event
   void computeTcpa(java.util.ArrayList flights, salsa.naming.UAL replyUAL) {
     this.replyRef = pa2.Main.getReferenceByLocation(replyUAL);
     this.t3Best = java.lang.Double.POSITIVE_INFINITY;
@@ -235,7 +238,6 @@ behavior Coordinator {
       if (iStart >= n - 1) break;
 
       salsa.naming.UAL ual = pickWorkerUAL("tcpa");
-      System.out.println("DEBUG pickWorkerUAL -> " + ual);
 
       if (ual == null) {
         System.out.println("Coordinator: local TcpaWorker for range [" + iStart + ".." + iEnd + "]");

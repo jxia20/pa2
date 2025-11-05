@@ -1,8 +1,13 @@
 module pa2;
 
+/*
+Reads flight data from a file via ReaderActor.
+Asks Coordinator to compute: Closest pair, then min DCPA, then soonest TCPA.
+*/
 behavior Main {
   java.util.ArrayList flightsCache;
-
+  
+  // reads input data
   void act(String[] args) {
     String path;
     if (args.length > 0) path = args[0];
@@ -11,6 +16,7 @@ behavior Main {
     reader <- readAll(path, this.getUAL());
   }
 
+  // stores flights and starts closest pair computation
   void afterRead(java.util.ArrayList flights) {
     this.flightsCache = flights;
     System.out.println("Unique flights: " + flights.size());
@@ -18,6 +24,7 @@ behavior Main {
     coord <- computeClosest(flights, this.getUAL());
   }
 
+  // prints minimum current distance then starts DCPA
   void afterClosest(double d1, java.util.ArrayList pairs) {
     if (java.lang.Double.isNaN(d1) || pairs.size()==0) { System.out.println("No pairs."); return; }
     System.out.println(String.format(java.util.Locale.US, "%.6f", d1));
@@ -28,6 +35,7 @@ behavior Main {
     coord <- computeDcpa(this.flightsCache, this.getUAL());
   }
 
+  // prints min DCPA then starts TCPA
   void afterDcpa(double d2, java.util.ArrayList rows) {
     System.out.println(String.format(java.util.Locale.US, "%.6f", d2));
     java.util.Iterator it = rows.iterator();
@@ -37,13 +45,14 @@ behavior Main {
     coord <- computeTcpa(this.flightsCache, this.getUAL());
   }
 
+  // prints earliest time (sec) and rows at that time
   void afterTcpa(double t3, java.util.ArrayList rows) {
     if (t3 == java.lang.Double.POSITIVE_INFINITY || rows.size()==0) {
       // No pair satisfied DCPA ≤ 0.66 nmi
       System.out.println("NaN");
       return;
     }
-    // Print time in seconds; 3 decimals is fine unless your grader specifies otherwise
+
     System.out.println(String.format(java.util.Locale.US, "%.3f", t3));
     java.util.Iterator it = rows.iterator();
     while (it.hasNext()) System.out.println((String) it.next());
